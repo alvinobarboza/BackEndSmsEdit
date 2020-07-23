@@ -1,6 +1,5 @@
 #include "api_call_Service.h"
 using namespace api::call;
-//add definition of your processing function here
 
 void Service::login(const HttpRequestPtr &req,
            std::function<void (const HttpResponsePtr &)> &&callback,
