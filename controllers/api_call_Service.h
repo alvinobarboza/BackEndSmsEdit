@@ -25,7 +25,6 @@ namespace api
 
             void saveUser(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback,
-                            const std::string &id,
                             const std::string &username,
                             const std::string &password,
                             const std::string &vendor) const;

@@ -43,18 +43,31 @@ void Service::login(const HttpRequestPtr &req,
 
 void Service::saveUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback,
-            const std::string &id,
             const std::string &username,
             const std::string &password,
             const std::string &vendor) const
 {
-    LOG_DEBUG<<"Save method "<<username;
-
+    LOG_DEBUG<<"User saved -> "<<username<<" Method = save";
+    
+    std::string response = "";
     Json::Value ret;
-    ret["result"]="ok";
-    ret["user_name"]="Jack";
-    ret["user_id"]=username;
-    ret["gender"]=1;
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ('$1', '$2', (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper(3$);",
+                                        username, password, vendor);
+        
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = "Erro ao salvar, verifique os logs do servidor!";
+    }
+
+    ret["Response"] = response;
+       
+    //ret["token"]=drogon::utils::getUuid();
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
