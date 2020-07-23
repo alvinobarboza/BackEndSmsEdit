@@ -173,7 +173,7 @@ void Service::getUsers(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================saget all vendors method===============================
+//===============================get all vendors method===============================
 void Service::getVendors(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
