@@ -11,8 +11,8 @@ namespace api
         public:
             METHOD_LIST_BEGIN
                 METHOD_ADD(Service::login,"/login?user={1}&passwd={2}",Post);
-                METHOD_ADD(Service::saveUser,"/save?id={1}&username={2}&password={3}&vendor={4}",Post);
-                METHOD_ADD(Service::updateUser,"/update?id={1}username={2}&password={3}&vendor={4}",Put);
+                METHOD_ADD(Service::saveUser,"/save?username={1}&password={2}&vendor={3}",Post);
+                METHOD_ADD(Service::updateUser,"/update?id={1}&username={2}&password={3}&vendor={4}",Put);
                 METHOD_ADD(Service::deleteUser,"/delete?id={1}",Delete);
                 METHOD_ADD(Service::getVendors,"/getVendors",Get);
                 METHOD_ADD(Service::getUsers,"/getUsers",Get);

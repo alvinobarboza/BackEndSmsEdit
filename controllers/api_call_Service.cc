@@ -41,6 +41,7 @@ void Service::login(const HttpRequestPtr &req,
     callback(resp);
 }
 
+//===============================save method===============================
 void Service::saveUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback,
             const std::string &username,
@@ -55,9 +56,10 @@ void Service::saveUser(const HttpRequestPtr &req,
     auto clientPtr = drogon::app().getDbClient();
     try
     {
-        auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ('$1', '$2', (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper(3$);",
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
                                         username, password, vendor);
         
+        response = "Usuário salvo com sucesso!";
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
@@ -66,12 +68,13 @@ void Service::saveUser(const HttpRequestPtr &req,
     }
 
     ret["Response"] = response;
-       
-    //ret["token"]=drogon::utils::getUuid();
+    ret["Test"] = ret;
+
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
 
+//===============================update method===============================
 void Service::updateUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback,
             const std::string &id,
@@ -79,9 +82,32 @@ void Service::updateUser(const HttpRequestPtr &req,
             const std::string &password,
             const std::string &vendor) const
 {
+    LOG_DEBUG<<"User updated -> "<<username<<" Method = save";
     
+    std::string response = "";
+    Json::Value ret;
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) WHERE CAST(id_user AS CHAR) = $4 ;",
+                                        username, password, vendor, id);
+        
+        response = "Usuário atualizado com sucesso!";
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = "Erro ao atualizar, verifique os logs do servidor!";
+    }
+
+    ret["Response"] = response;
+        
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
 }
 
+//===============================delete method===============================
 void Service::deleteUser(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback,
                 const std::string &id) const
@@ -89,12 +115,14 @@ void Service::deleteUser(const HttpRequestPtr &req,
 
 }
 
+//===============================get all users method===============================
 void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
 
 }
 
+//===============================saget all vendors method===============================
 void Service::getVendors(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
