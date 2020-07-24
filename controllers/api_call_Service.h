@@ -1,6 +1,9 @@
 #pragma once
 #include <drogon/HttpController.h>
 #include <drogon/drogon.h>
+#include <iostream>
+#include <future>
+
 using namespace drogon;
 namespace api
 {
@@ -16,6 +19,7 @@ namespace api
                 METHOD_ADD(Service::deleteUser,"/delete?id={1}",Delete);
                 METHOD_ADD(Service::getVendors,"/getVendors",Get);
                 METHOD_ADD(Service::getUsers,"/getUsers",Get);
+                METHOD_ADD(Service::getUserSMS,"/getUserSMS?id={1}",Get);
             METHOD_LIST_END
             
             void login(const HttpRequestPtr &req,
@@ -45,6 +49,10 @@ namespace api
 
             void getVendors(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback) const;
+
+            void getUserSMS(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback,
+                            const std::string &id) const;                
         };
     }
 }
