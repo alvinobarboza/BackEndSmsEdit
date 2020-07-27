@@ -133,6 +133,96 @@ void Service::deleteUser(const HttpRequestPtr &req,
     callback(resp);
 }
 
+//===============================save vendor method===============================
+void Service::saveVendor(const HttpRequestPtr &req,
+            std::function<void (const HttpResponsePtr &)> &&callback,
+            const std::string &vendorname,
+            const std::string &url) const
+{
+    LOG_DEBUG<<"Vendor saved -> "<<vendorname<<" Method = save";
+    
+    std::string response = "";
+    Json::Value ret;
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url) VALUES ($1, $2);",
+                                        vendorname, url);        
+        response = "Vendor salvo com sucesso!";
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = "Erro ao salvar, verifique os logs do servidor!";
+    }
+
+    ret["Response"] = response;
+
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
+//===============================update vendor method===============================
+void Service::updateVendor(const HttpRequestPtr &req,
+            std::function<void (const HttpResponsePtr &)> &&callback,
+            const std::string &id,
+            const std::string &vendorname,
+            const std::string &url) const
+{
+    LOG_DEBUG<<"Vendor updated -> "<<vendorname<<" Method = update";
+    
+    std::string response = "";
+    Json::Value ret;
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2 WHERE CAST(id_vendor AS CHAR) = $3 ;",
+                                        vendorname, url, id);        
+        response = "Vendor atualizado com sucesso!";
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = "Erro ao atualizar, verifique os logs do servidor!";
+    }
+
+    ret["Response"] = response;
+        
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
+//===============================delete vendor method===============================
+void Service::deleteVendor(const HttpRequestPtr &req,
+                std::function<void (const HttpResponsePtr &)> &&callback,
+                const std::string &id) const
+{
+    LOG_DEBUG<<"Vendor deleted -> "<<id<<" Method = delete";
+    
+    std::string response = "";
+    Json::Value ret;
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS CHAR) = $1 ;",
+                                        id);        
+        response = "Vendor deletado com sucesso!";
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = "Erro ao deletar, verifique os logs do servidor!";
+    }
+
+    ret["Response"] = response;
+        
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
 //===============================get all users method===============================
 void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
@@ -213,46 +303,47 @@ void Service::getVendors(const HttpRequestPtr &req,
     callback(resp);
 }
 
-void Service::getUserSMS(const HttpRequestPtr &req,
-                            std::function<void (const HttpResponsePtr &)> &&callback,
-                            const std::string &id)const
-{
+// void Service::getUserSMS(const HttpRequestPtr &req,
+//                             std::function<void (const HttpResponsePtr &)> &&callback,
+//                             const std::string &id)const
+// {
 
-    Json::Value ret;
+//     Json::Value ret;
 
-    int count = 0;
-    auto client = HttpClient::newHttpClient("http://sms.youcast.tv.br");
-    auto requestH = HttpRequest::newHttpRequest();
-    requestH->setMethod(drogon::Post);
-    requestH->setPath("/api/customer/getData");
-    requestH->addHeader("Authorization","alvino.barboza@youcast.tv.br:1595625451:dd441f04c06c9bd718c8f1815304705db0348be9");
-    requestH->setBody("{\"data\":{\"viewers_id\": 02}}");
+//     int count = 0;
+//     auto client = HttpClient::newHttpClient("http://sms.youcast.tv.br");
+//     auto requestH = HttpRequest::newHttpRequest();
+//     requestH->setMethod(drogon::Post);
+//     requestH->setPath("/api/customer/getData");
+//     requestH->addHeader("Authorization","alvino.barboza@youcast.tv.br:1595625451:dd441f04c06c9bd718c8f1815304705db0348be9");
+//     requestH->addHeader("Content-Type","application/json");
+//     requestH->setBody("{'data':{'viewers_id': 02}}");
 
-    for (int i = 0; i < 10; ++i)
-    {
-        client->sendRequest(
-            requestH,
-            [&count,&ret](ReqResult result, const HttpResponsePtr &response) {
-                std::cout << "receive response!" << std::endl;
-                // auto headers=response.
-                ++count;
-                auto retrieve = response->getJsonObject();
+//    // for (int i = 0; i < 10; ++i)
+//   //  {
+//         client->sendRequest(
+//             requestH,
+//             [&count,&ret](ReqResult result, const HttpResponsePtr &response) {
+//                 std::cout << "receive response!" << std::endl;
+//                 // auto headers=response.
+//                 ++count;
+//                 auto retrieve = response->getJsonObject();
 
-                //ret = retrieve ;
-                // auto cookies = response->cookies();
-                // for (auto const &cookie : cookies)
-                // {
-                //     std::cout << cookie.first << "="
-                //                 << cookie.second.value()
-                //                 << ":domain=" << cookie.second.domain()
-                //                 << std::endl;
-                // }
-               // std::cout << "count=" << retrieve << std::endl;
-            });
-    }    
+//                 //ret = retrieve ;
+//                 // auto cookies = response->cookies();
+//                 // for (auto const &cookie : cookies)
+//                 // {
+//                 //     std::cout << cookie.first << "="
+//                 //                 << cookie.second.value()
+//                 //                 << ":domain=" << cookie.second.domain()
+//                 //                 << std::endl;
+//                 // }
+//                 //std::cout << "count=" << (*retrieve)["status"].asString() << std::endl;
+//             });
+//   //  }    
 
-    LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";
+//     LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";
 
-    auto resp=HttpResponse::newHttpJsonResponse(ret);
-    callback(resp);
-}
+//     auto resp=HttpResponse::newHttpJsonResponse(ret);
+//     callback(resp);
+// }
