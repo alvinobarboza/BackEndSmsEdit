@@ -9,7 +9,7 @@ void Service::login(const HttpRequestPtr &req,
     
     LOG_DEBUG<<"Tentativa de login -> "<<userId<<" Method = login";
     
-    std::string vendor = "", url = "";
+    std::string vendor = "", url = "", userToken ="", token = "";
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
@@ -21,6 +21,8 @@ void Service::login(const HttpRequestPtr &req,
         {
             vendor = row["ds_vendor_name"].as<std::string>();
             url = row["ds_vendor_url"].as<std::string>();
+            userToken = row["ds_vendor_user_token"].as<std::string>();
+            token = row["ds_vendor_token"].as<std::string>();
         }
 
         if(vendor == "" && url == ""){
@@ -33,6 +35,8 @@ void Service::login(const HttpRequestPtr &req,
         vendor = "Erro ao logar, verifique os logs do servidor!";
     }
 
+    ret["User_Token"] = userToken;
+    ret["token"] = token;
     ret["Vendor"] = vendor;
     ret["URL"] = url;
     
@@ -137,7 +141,9 @@ void Service::deleteUser(const HttpRequestPtr &req,
 void Service::saveVendor(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback,
             const std::string &vendorname,
-            const std::string &url) const
+            const std::string &url,
+            const std::string &usertoken,
+            const std::string &token) const
 {
     LOG_DEBUG<<"Vendor saved -> "<<vendorname<<" Method = save";
     
@@ -147,8 +153,8 @@ void Service::saveVendor(const HttpRequestPtr &req,
     auto clientPtr = drogon::app().getDbClient();
     try
     {
-        auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url) VALUES ($1, $2);",
-                                        vendorname, url);        
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url, ds_vendor_user_token, ds_vendor_token) VALUES ($1, $2, $3, $4);",
+                                        vendorname, url, usertoken, token);        
         response = "Vendor salvo com sucesso!";
     }
     catch (const drogon::orm::DrogonDbException &e)
@@ -168,7 +174,9 @@ void Service::updateVendor(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback,
             const std::string &id,
             const std::string &vendorname,
-            const std::string &url) const
+            const std::string &url,
+            const std::string &usertoken,
+            const std::string &token) const
 {
     LOG_DEBUG<<"Vendor updated -> "<<vendorname<<" Method = update";
     
@@ -178,8 +186,8 @@ void Service::updateVendor(const HttpRequestPtr &req,
     auto clientPtr = drogon::app().getDbClient();
     try
     {
-        auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2 WHERE CAST(id_vendor AS CHAR) = $3 ;",
-                                        vendorname, url, id);        
+        auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR) = $5 ;",
+                                        vendorname, url, usertoken, token, id);        
         response = "Vendor atualizado com sucesso!";
     }
     catch (const drogon::orm::DrogonDbException &e)
@@ -243,6 +251,7 @@ void Service::getUsers(const HttpRequestPtr &req,
             obj["UserID"] = row["id_user"].as<std::string>();
             obj["UserName"] = row["ds_user_name"].as<std::string>();
             obj["Vendor"] = row["ds_vendor_name"].as<std::string>();
+            
 
             count = std::to_string(i);
             ret[count] = obj;
@@ -283,6 +292,8 @@ void Service::getVendors(const HttpRequestPtr &req,
             obj["VendorID"] = row["id_vendor"].as<std::string>();
             obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
             obj["VendorUrl"] = row["ds_vendor_url"].as<std::string>();
+            obj["User_token"] = row["ds_vendor_user_token"].as<std::string>();
+            obj["Token"] = row["ds_vendor_token"].as<std::string>();
 
             count = std::to_string(i);
             ret[count] = obj;
