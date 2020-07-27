@@ -21,6 +21,7 @@ CREATE TABLE sms."user" (
 CREATE TABLE sms.vendor (
     id_vendor bigint DEFAULT nextval('sms.seq_vendor'::regclass) NOT NULL,
     ds_vendor_name character varying(150) NOT NULL,
-    ds_vendor_url character varying(150) NOT NULL
+    ds_vendor_user_token character varying(150) NOT NULL
+    ds_vendor_token character varying(150) NOT NULL
 );
 ```
