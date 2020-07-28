@@ -58,17 +58,28 @@ void Service::saveUser(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    if(username == "" || password == "" || vendor == "")
     {
-        auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
-                                        username, password, vendor);        
-        response = "Usuário salvo com sucesso!";
+        response = "Algum campo está vazio";
+        ret["Username"] = username;
+        ret["Password"] = password;
+        ret["Vendor"] = vendor;
     }
-    catch (const drogon::orm::DrogonDbException &e)
+    else
     {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao salvar, verifique os logs do servidor!";
-    }
+        try
+        {
+            auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
+                                            username, password, vendor);        
+            response = "Usuário salvo com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao salvar, verifique os logs do servidor!";
+        }
+    }    
 
     ret["Response"] = response;
 
@@ -90,16 +101,28 @@ void Service::updateUser(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    if(id == "" || username == "" || password == "" || vendor == "")
     {
-        auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) WHERE CAST(id_user AS CHAR) = $4 ;",
-                                        username, password, vendor, id);        
-        response = "Usuário atualizado com sucesso!";
+        response = "Algum campo está vazio";
+        ret["Id"] = id;
+        ret["Username"] = username;
+        ret["Password"] = password;
+        ret["Vendor"] = vendor;
     }
-    catch (const drogon::orm::DrogonDbException &e)
+    else
     {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao atualizar, verifique os logs do servidor!";
+        try
+        {
+            auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) WHERE CAST(id_user AS CHAR) = $4 ;",
+                                            username, password, vendor, id);        
+            response = "Usuário atualizado com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao atualizar, verifique os logs do servidor!";
+        }
     }
 
     ret["Response"] = response;
@@ -119,16 +142,24 @@ void Service::deleteUser(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    if(id == "")
     {
-        auto r = clientPtr->execSqlSync("DELETE FROM sms.user WHERE CAST(id_user AS CHAR) = $1 ;",
-                                        id);        
-        response = "Usuário deletado com sucesso!";
+        response = "Compo ID vazio!";
     }
-    catch (const drogon::orm::DrogonDbException &e)
-    {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao deletar, verifique os logs do servidor!";
+    else
+    {        
+        try
+        {
+            auto r = clientPtr->execSqlSync("DELETE FROM sms.user WHERE CAST(id_user AS CHAR) = $1 ;",
+                                            id);        
+            response = "Usuário deletado com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao deletar, verifique os logs do servidor!";
+        }
     }
 
     ret["Response"] = response;
@@ -151,16 +182,28 @@ void Service::saveVendor(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    if(vendorname == "" || url == "" || usertoken == "" || token == "")
     {
-        auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url, ds_vendor_user_token, ds_vendor_token) VALUES ($1, $2, $3, $4);",
-                                        vendorname, url, usertoken, token);        
-        response = "Vendor salvo com sucesso!";
+        response = "Algum campo vazio!";
+        ret["Vendor_Name"] = vendorname;
+        ret["URL"] = url;
+        ret["UserToken"] = usertoken;
+        ret["Token"] = token;
     }
-    catch (const drogon::orm::DrogonDbException &e)
-    {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao salvar, verifique os logs do servidor!";
+    else
+    {        
+        try
+        {
+            auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url, ds_vendor_user_token, ds_vendor_token) VALUES ($1, $2, $3, $4);",
+                                            vendorname, url, usertoken, token);        
+            response = "Vendor salvo com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao salvar, verifique os logs do servidor!";
+        }
     }
 
     ret["Response"] = response;
@@ -184,16 +227,28 @@ void Service::updateVendor(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    if(id == "" || vendorname == "" || url == "" || usertoken == "" || token == "")
     {
-        auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR) = $5 ;",
-                                        vendorname, url, usertoken, token, id);        
-        response = "Vendor atualizado com sucesso!";
+        response = "Algum campo vazio!";
+        ret["Vendor_Name"] = vendorname;
+        ret["URL"] = url;
+        ret["UserToken"] = usertoken;
+        ret["Token"] = token;
     }
-    catch (const drogon::orm::DrogonDbException &e)
+    else
     {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao atualizar, verifique os logs do servidor!";
+        try
+        {
+            auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR) = $5 ;",
+                                            vendorname, url, usertoken, token, id);        
+            response = "Vendor atualizado com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao atualizar, verifique os logs do servidor!";
+        }
     }
 
     ret["Response"] = response;
@@ -213,16 +268,25 @@ void Service::deleteVendor(const HttpRequestPtr &req,
     Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
-    try
+
+    
+    if(id == "")
     {
-        auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS CHAR) = $1 ;",
-                                        id);        
-        response = "Vendor deletado com sucesso!";
+        response = "Compo ID vazio!";
     }
-    catch (const drogon::orm::DrogonDbException &e)
-    {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao deletar, verifique os logs do servidor!";
+    else
+    {        
+        try
+        {
+            auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS CHAR) = $1 ;",
+                                            id);        
+            response = "Vendor deletado com sucesso!";
+        }
+        catch (const drogon::orm::DrogonDbException &e)
+        {
+            LOG_DEBUG << "catch:" << e.base().what();
+            response = "Erro ao deletar, verifique os logs do servidor!";
+        }
     }
 
     ret["Response"] = response;
