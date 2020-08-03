@@ -377,48 +377,50 @@ void Service::getVendors(const HttpRequestPtr &req,
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
+//=====================================test get API =============================
+void Service::getUserSMS(const HttpRequestPtr &req,
+                             std::function<void (const HttpResponsePtr &)> &&callback,
+                             const std::string &id)const
+{
+    LOG_DEBUG << "get SMS";
+    Json::Value ret;
 
-// void Service::getUserSMS(const HttpRequestPtr &req,
-//                             std::function<void (const HttpResponsePtr &)> &&callback,
-//                             const std::string &id)const
-// {
+    int count = 0;
+    auto client = HttpClient::newHttpClient("http://10.50.0.103:8080");
+    auto requestH = HttpRequest::newHttpRequest();
+    requestH->setMethod(drogon::Get);
+    requestH->setPath("/api/call/Service/getUsers");
+    //requestH->addHeader("Authorization","");
+    //requestH->addHeader("Content-Type","application/json");
+    //requestH->setBody("{'data':{'viewers_id': 02}}");
 
-//     Json::Value ret;
+    for (int i = 0; i < 2; ++i)
+    {
+        client->sendRequest(
+            requestH,
+            [&count,&ret,&callback](ReqResult result, const HttpResponsePtr &response) {
+                std::cout << "receive response!" << std::endl;
+                // auto headers=response.
+                ++count;
+                ret["1"] = *response->getJsonObject();
+                
+                std::cout<<ret["1"]<<"Response"<<std::endl;
+                
+                auto cookies = response->cookies();
+                for (auto const &cookie : cookies)
+                {
+                    std::cout << cookie.first << "="
+                              << cookie.second.value()
+                              << ":domain=" << cookie.second.domain()
+                              << std::endl;
+                }
+                //std::cout << "count=" << retrieve << std::endl;
+                //LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";              
+            });
+    }    
 
-//     int count = 0;
-//     auto client = HttpClient::newHttpClient("http://sms.youcast.tv.br");
-//     auto requestH = HttpRequest::newHttpRequest();
-//     requestH->setMethod(drogon::Post);
-//     requestH->setPath("/api/customer/getData");
-//     requestH->addHeader("Authorization","alvino.barboza@youcast.tv.br:1595625451:dd441f04c06c9bd718c8f1815304705db0348be9");
-//     requestH->addHeader("Content-Type","application/json");
-//     requestH->setBody("{'data':{'viewers_id': 02}}");
+    LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";
 
-//    // for (int i = 0; i < 10; ++i)
-//   //  {
-//         client->sendRequest(
-//             requestH,
-//             [&count,&ret](ReqResult result, const HttpResponsePtr &response) {
-//                 std::cout << "receive response!" << std::endl;
-//                 // auto headers=response.
-//                 ++count;
-//                 auto retrieve = response->getJsonObject();
-
-//                 //ret = retrieve ;
-//                 // auto cookies = response->cookies();
-//                 // for (auto const &cookie : cookies)
-//                 // {
-//                 //     std::cout << cookie.first << "="
-//                 //                 << cookie.second.value()
-//                 //                 << ":domain=" << cookie.second.domain()
-//                 //                 << std::endl;
-//                 // }
-//                 //std::cout << "count=" << (*retrieve)["status"].asString() << std::endl;
-//             });
-//   //  }    
-
-//     LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";
-
-//     auto resp=HttpResponse::newHttpJsonResponse(ret);
-//     callback(resp);
-// }
+    auto resp=HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
