@@ -383,44 +383,42 @@ void Service::getUserSMS(const HttpRequestPtr &req,
                              const std::string &id)const
 {
     LOG_DEBUG << "get SMS";
-    Json::Value ret;
-
+    static Json::Value json;
+    static bool check = false;
+    
     int count = 0;
-    auto client = HttpClient::newHttpClient("http://10.50.0.103:8080");
+    auto client = HttpClient::newHttpClient("https://sms.youcast.tv.br");
     auto requestH = HttpRequest::newHttpRequest();
-    requestH->setMethod(drogon::Get);
-    requestH->setPath("/api/call/Service/getUsers");
-    //requestH->addHeader("Authorization","");
-    //requestH->addHeader("Content-Type","application/json");
-    //requestH->setBody("{'data':{'viewers_id': 02}}");
+    requestH->setMethod(drogon::Post);
+    requestH->setPath("/api/customer/getData");
+    requestH->addHeader("Authorization","");
+    requestH->addHeader("Content-Type","application/json");
+    requestH->setBody("{'data':{'viewers_id': 02}}");
 
-    for (int i = 0; i < 2; ++i)
-    {
-        client->sendRequest(
-            requestH,
-            [&count,&ret,&callback](ReqResult result, const HttpResponsePtr &response) {
-                std::cout << "receive response!" << std::endl;
-                // auto headers=response.
-                ++count;
-                ret["1"] = *response->getJsonObject();
-                
-                std::cout<<ret["1"]<<"Response"<<std::endl;
-                
-                auto cookies = response->cookies();
-                for (auto const &cookie : cookies)
-                {
-                    std::cout << cookie.first << "="
-                              << cookie.second.value()
-                              << ":domain=" << cookie.second.domain()
-                              << std::endl;
-                }
-                //std::cout << "count=" << retrieve << std::endl;
-                //LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";              
-            });
-    }    
+    //for (int i = 0; i < 2; ++i)
+    //{
+    //}    
+    client->sendRequest(
+        requestH,
+        [&](ReqResult result, const HttpResponsePtr &response){
+            std::cout << "receive response!" << std::endl;
+            // auto headers=response.
+            ++count;
+          
+            json = *response->getJsonObject();
+            check = true;
+            std::cout << "Json received" << std::endl;
+          
+            std::cout<<json<<"Response"<<std::endl;
 
-    LOG_DEBUG<<"Get All SMS Users -> Method = getVendors";
+            auto resp=HttpResponse::newHttpJsonResponse(json);
+            callback(resp);
+                                         
+        });
 
-    auto resp=HttpResponse::newHttpJsonResponse(ret);
-    callback(resp);
+    std::this_thread::sleep_for (std::chrono::milliseconds(30));
+
+    std::cout<<json<<"Response"<< std::endl;
+       
+    
 }
