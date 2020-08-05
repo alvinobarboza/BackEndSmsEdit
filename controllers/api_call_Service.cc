@@ -384,7 +384,7 @@ void Service::getUserSMS(const HttpRequestPtr &req,
 {
     LOG_DEBUG << "get SMS";
     static Json::Value json;
-    static bool check = false;
+    static bool check = true;
     
     int count = 0;
     auto client = HttpClient::newHttpClient("https://sms.youcast.tv.br");
@@ -400,25 +400,30 @@ void Service::getUserSMS(const HttpRequestPtr &req,
     //}    
     client->sendRequest(
         requestH,
-        [&](ReqResult result, const HttpResponsePtr &response){
+        [=,&count](ReqResult result, const HttpResponsePtr &response){
             std::cout << "receive response!" << std::endl;
             // auto headers=response.
             ++count;
-          
+
             json = *response->getJsonObject();
-            check = true;
+            
             std::cout << "Json received" << std::endl;
           
             std::cout<<json<<"Response"<<std::endl;
-
-            auto resp=HttpResponse::newHttpJsonResponse(json);
-            callback(resp);
-                                         
         });
 
-    std::this_thread::sleep_for (std::chrono::milliseconds(30));
+    while(check)
+    {
+        std::cout << count++ << "Count \n";
+        if(json != nullptr)
+            check = false;
 
-    std::cout<<json<<"Response"<< std::endl;
+    }
+         
+    auto resp=HttpResponse::newHttpJsonResponse(json);
+    callback(resp);
+    std::cout<<json<<"Response worked!"<< std::endl;
+    
        
     
 }
