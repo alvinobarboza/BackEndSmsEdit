@@ -6,13 +6,18 @@ using namespace api::call;
 void Service::login(const HttpRequestPtr &req,
            std::function<void (const HttpResponsePtr &)> &&callback)
 {
-    
-    
     std::string vendor = "", url = "", userToken ="", token = "";
     Json::Value ret, loginData;
+    Json::Reader reader; 
 
-    loginData = *req->getJsonObject();
-    LOG_DEBUG<<"Tentativa de login -> "<<loginData["login"].asString()<<" Method = login";
+    reader.parse(std::string{req->getBody()}, loginData);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    }   
+
+    LOG_DEBUG<<"Tentativa de login -> "<<loginData["login"].asString();
 
     auto clientPtr = drogon::app().getDbClient();
     try
@@ -52,17 +57,23 @@ void Service::saveUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
 
-    Json::Value ret, user;
+    Json::Value ret, user; 
+    Json::Reader reader; 
 
-    user = *req->getJsonObject();
+    reader.parse(std::string{req->getBody()}, user);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
 
-    LOG_DEBUG<<"User saved -> "<<username<<" Method = save";
+    LOG_DEBUG<<"User saved -> "<<user["username"].asString()<<" Method = save";
     
     std::string response = "";
 
     auto clientPtr = drogon::app().getDbClient();
 
-    if(username == "" || password == "" || vendor == "")
+    if(user["username"].asString() == "" || user["password"].asString() == "" || user["vendor"].asString() == "")
     {
         response = "Algum campo está vazio";
         ret["Username"] = user["username"];
@@ -98,14 +109,20 @@ void Service::updateUser(const HttpRequestPtr &req,
 {
     Json::Value ret, user;
     std::string response = "";
+    Json::Reader reader; 
 
-    user = *req->getJsonObject();
+    reader.parse(std::string{req->getBody()}, user);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
 
-    LOG_DEBUG<<"User updated -> "<<username<<" Method = update";
+    LOG_DEBUG<<"User updated -> "<<user["username"].asString()<<" Method = update";
     
     auto clientPtr = drogon::app().getDbClient();
 
-    if(id == "" || username == "" || password == "" || vendor == "")
+    if(user["id"].asString() == "" || user["username"].asString() == "" || user["password"].asString() == "" || user["vendor"].asString() == "")
     {
         response = "Algum campo está vazio";
         ret["Id"] = user["id"];
@@ -136,19 +153,24 @@ void Service::updateUser(const HttpRequestPtr &req,
 
 //===============================delete method===============================
 void Service::deleteUser(const HttpRequestPtr &req,
-                std::function<void (const HttpResponsePtr &)> &&callback,
-                const std::string &id) const
+                std::function<void (const HttpResponsePtr &)> &&callback) const
 {
     std::string response = "";
     Json::Value ret, user;
+    Json::Reader reader; 
 
-    user = *req->getJsonObject();
+    reader.parse(std::string{req->getBody()}, user);
     
-    LOG_DEBUG<<"User deleted -> "<<id<<" Method = delete";
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
+    
+    LOG_DEBUG<<"User deleted -> "<<user["id"].asString()<<" Method = delete";
 
     auto clientPtr = drogon::app().getDbClient();
 
-    if(id == "")
+    if(user["id"].asString() == "")
     {
         response = "Compo ID vazio!";
     }
@@ -157,7 +179,7 @@ void Service::deleteUser(const HttpRequestPtr &req,
         try
         {
             auto r = clientPtr->execSqlSync("DELETE FROM sms.user WHERE CAST(id_user AS CHAR) = $1 ;",
-                                            id);        
+                                            user["id"].asString());        
             response = "Usuário deletado com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -175,33 +197,38 @@ void Service::deleteUser(const HttpRequestPtr &req,
 
 //===============================save vendor method===============================
 void Service::saveVendor(const HttpRequestPtr &req,
-            std::function<void (const HttpResponsePtr &)> &&callback,
-            const std::string &vendorname,
-            const std::string &url,
-            const std::string &usertoken,
-            const std::string &token) const
+            std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    LOG_DEBUG<<"Vendor saved -> "<<vendorname<<" Method = save";
     
     std::string response = "";
-    Json::Value ret;
+    Json::Value ret, vendor;
+    Json::Reader reader; 
+
+    reader.parse(std::string{req->getBody()}, vendor);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
+
+    LOG_DEBUG<<"Vendor saved -> "<<vendor["vendorname"].asString()<<" Method = save";
 
     auto clientPtr = drogon::app().getDbClient();
 
-    if(vendorname == "" || url == "" || usertoken == "" || token == "")
+    if(vendor["vendorname"].asString() == "" || vendor["url"].asString() == "" || vendor["usertoken"].asString() == "" || vendor["token"].asString() == "")
     {
         response = "Algum campo vazio!";
-        ret["Vendor_Name"] = vendorname;
-        ret["URL"] = url;
-        ret["UserToken"] = usertoken;
-        ret["Token"] = token;
+        ret["Vendor_Name"] = vendor["vendorname"];
+        ret["URL"] = vendor["url"];
+        ret["UserToken"] = vendor["usertoken"];
+        ret["Token"] = vendor["token"];
     }
     else
     {        
         try
         {
             auto r = clientPtr->execSqlSync("INSERT INTO sms.vendor(ds_vendor_name, ds_vendor_url, ds_vendor_user_token, ds_vendor_token) VALUES ($1, $2, $3, $4);",
-                                            vendorname, url, usertoken, token);        
+                                            vendor["vendorname"].asString(), vendor["url"].asString(), vendor["usertoken"].asString(), vendor["token"].asString());        
             response = "Vendor salvo com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -219,34 +246,40 @@ void Service::saveVendor(const HttpRequestPtr &req,
 
 //===============================update vendor method===============================
 void Service::updateVendor(const HttpRequestPtr &req,
-            std::function<void (const HttpResponsePtr &)> &&callback,
-            const std::string &id,
-            const std::string &vendorname,
-            const std::string &url,
-            const std::string &usertoken,
-            const std::string &token) const
+            std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    LOG_DEBUG<<"Vendor updated -> "<<vendorname<<" Method = update";
     
     std::string response = "";
-    Json::Value ret;
+    Json::Value ret, vendor;
+    Json::Reader reader; 
+
+    reader.parse(std::string{req->getBody()}, vendor);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
+
+    LOG_DEBUG<<"Vendor updated -> "<<vendor["vendorname"].asString()<<" Method = update";
+
 
     auto clientPtr = drogon::app().getDbClient();
 
-    if(id == "" || vendorname == "" || url == "" || usertoken == "" || token == "")
+    if(vendor == nullptr || vendor["id"].asString() == "" || vendor["vendorname"].asString() == "" || vendor["url"].asString() == "" || vendor["usertoken"].asString() == "" || vendor["token"].asString() == "")
     {
         response = "Algum campo vazio!";
-        ret["Vendor_Name"] = vendorname;
-        ret["URL"] = url;
-        ret["UserToken"] = usertoken;
-        ret["Token"] = token;
+        ret["ID"] = vendor["id"];
+        ret["Vendor_Name"] = vendor["vendorname"];
+        ret["URL"] = vendor["url"];
+        ret["UserToken"] = vendor["usertoken"];
+        ret["Token"] = vendor["token"];
     }
     else
     {
         try
         {
             auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR) = $5 ;",
-                                            vendorname, url, usertoken, token, id);        
+                                            vendor["vendorname"].asString(), vendor["url"].asString(), vendor["usertoken"].asString(), vendor["token"].asString(), vendor["id"].asString());        
             response = "Vendor atualizado com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -264,18 +297,25 @@ void Service::updateVendor(const HttpRequestPtr &req,
 
 //===============================delete vendor method===============================
 void Service::deleteVendor(const HttpRequestPtr &req,
-                std::function<void (const HttpResponsePtr &)> &&callback,
-                const std::string &id) const
+                std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    LOG_DEBUG<<"Vendor deleted -> "<<id<<" Method = delete";
     
     std::string response = "";
-    Json::Value ret;
+    Json::Value ret, vendor;
+    Json::Reader reader; 
+
+    reader.parse(std::string{req->getBody()}, vendor);
+    
+    if(req->getBody()=="")
+    {
+        ret["response"] = "Não Há informações no body";
+    } 
+
+    LOG_DEBUG<<"Vendor deleted -> "<<vendor["id"].asString()<<" Method = delete";
 
     auto clientPtr = drogon::app().getDbClient();
 
-    
-    if(id == "")
+    if(vendor["id"].asString() == "")
     {
         response = "Compo ID vazio!";
     }
@@ -283,8 +323,7 @@ void Service::deleteVendor(const HttpRequestPtr &req,
     {        
         try
         {
-            auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS CHAR) = $1 ;",
-                                            id);        
+            auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS CHAR) = $1 ;",vendor["id"].asString());        
             response = "Vendor deletado com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)

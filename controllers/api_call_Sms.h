@@ -15,9 +15,12 @@ namespace api
     {
       public:
         METHOD_LIST_BEGIN
-          METHOD_ADD(Sms::getUserSMS,"/searchUserSMS",Get);
+          METHOD_ADD(Sms::getUserSMS,"/searchUserSMS",Post);
+          METHOD_ADD(Sms::UpdateSMS,"/updateUserSMS",Put);
         METHOD_LIST_END
           void getUserSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void UpdateSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
     };
   }
