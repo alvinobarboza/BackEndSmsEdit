@@ -1,22 +1,24 @@
 #include "api_call_Service.h"
 using namespace api::call;
 
+
+//================================simple login method==========================
 void Service::login(const HttpRequestPtr &req,
-           std::function<void (const HttpResponsePtr &)> &&callback,
-           std::string &&userId,
-           const std::string &password)
+           std::function<void (const HttpResponsePtr &)> &&callback)
 {
     
-    LOG_DEBUG<<"Tentativa de login -> "<<userId<<" Method = login";
     
     std::string vendor = "", url = "", userToken ="", token = "";
-    Json::Value ret;
+    Json::Value ret, loginData;
+
+    loginData = *req->getJsonObject();
+    LOG_DEBUG<<"Tentativa de login -> "<<loginData["login"].asString()<<" Method = login";
 
     auto clientPtr = drogon::app().getDbClient();
     try
     {
         auto r = clientPtr->execSqlSync("select * from sms.user, sms.vendor where ds_user_name=$1 and ds_user_password=$2 and fk_vendor = id_vendor",
-                                        userId, password);
+                                        loginData["login"].asString(),loginData["password"].asString());
         for (auto const &row : r)
         {
             vendor = row["ds_vendor_name"].as<std::string>();
@@ -47,31 +49,34 @@ void Service::login(const HttpRequestPtr &req,
 
 //===============================save method===============================
 void Service::saveUser(const HttpRequestPtr &req,
-            std::function<void (const HttpResponsePtr &)> &&callback,
-            const std::string &username,
-            const std::string &password,
-            const std::string &vendor) const
+            std::function<void (const HttpResponsePtr &)> &&callback) const
 {
+
+    Json::Value ret, user;
+
+    user = *req->getJsonObject();
+
     LOG_DEBUG<<"User saved -> "<<username<<" Method = save";
     
     std::string response = "";
-    Json::Value ret;
 
     auto clientPtr = drogon::app().getDbClient();
 
     if(username == "" || password == "" || vendor == "")
     {
         response = "Algum campo está vazio";
-        ret["Username"] = username;
-        ret["Password"] = password;
-        ret["Vendor"] = vendor;
+        ret["Username"] = user["username"];
+        ret["Password"] = user["password"];
+        ret["Vendor"] = user["vendor"];
     }
     else
     {
         try
         {
             auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
-                                            username, password, vendor);        
+                                            user["username"].asString(), 
+                                            user["password"].asString(), 
+                                            user["vandor"].asString());
             response = "Usuário salvo com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -89,33 +94,31 @@ void Service::saveUser(const HttpRequestPtr &req,
 
 //===============================update method===============================
 void Service::updateUser(const HttpRequestPtr &req,
-            std::function<void (const HttpResponsePtr &)> &&callback,
-            const std::string &id,
-            const std::string &username,
-            const std::string &password,
-            const std::string &vendor) const
+            std::function<void (const HttpResponsePtr &)> &&callback) const
 {
+    Json::Value ret, user;
+    std::string response = "";
+
+    user = *req->getJsonObject();
+
     LOG_DEBUG<<"User updated -> "<<username<<" Method = update";
     
-    std::string response = "";
-    Json::Value ret;
-
     auto clientPtr = drogon::app().getDbClient();
 
     if(id == "" || username == "" || password == "" || vendor == "")
     {
         response = "Algum campo está vazio";
-        ret["Id"] = id;
-        ret["Username"] = username;
-        ret["Password"] = password;
-        ret["Vendor"] = vendor;
+        ret["Id"] = user["id"];
+        ret["Username"] = user["username"];
+        ret["Password"] = user["password"];
+        ret["Vendor"] = user["vendor"];
     }
     else
     {
         try
         {
             auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) WHERE CAST(id_user AS CHAR) = $4 ;",
-                                            username, password, vendor, id);        
+                                            user["username"].asString(), user["password"].asString(), user["vendor"].asString(), user["id"].asString());        
             response = "Usuário atualizado com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -136,10 +139,12 @@ void Service::deleteUser(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback,
                 const std::string &id) const
 {
-    LOG_DEBUG<<"User deleted -> "<<id<<" Method = delete";
-    
     std::string response = "";
-    Json::Value ret;
+    Json::Value ret, user;
+
+    user = *req->getJsonObject();
+    
+    LOG_DEBUG<<"User deleted -> "<<id<<" Method = delete";
 
     auto clientPtr = drogon::app().getDbClient();
 
