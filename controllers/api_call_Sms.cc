@@ -64,10 +64,10 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
 	Json::Value json, temp, response, request;
     std::string urlCompare, path, secret, user_token, url;	
     Json::Reader reader; 
-
+    
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
-
+    
  //-------------------verification for empty body---------------------
     if(req->getBody() == "")
     {
@@ -75,7 +75,6 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
     }
  //-------------------verification for empty fields---------------------
     else if(temp["url"].asString()==""||
-            temp["data"].asString()==""||
             temp["user_token"].asString()==""||
             temp["secret"].asString()=="")
     {
