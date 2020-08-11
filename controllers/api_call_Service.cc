@@ -31,7 +31,6 @@ void Service::login(const HttpRequestPtr &req,
             userToken = row["ds_vendor_user_token"].as<std::string>();
             token = row["ds_vendor_token"].as<std::string>();
         }
-
         if(vendor == "" && url == ""){
             vendor = "Usuário ou senha incorreta!";
         }

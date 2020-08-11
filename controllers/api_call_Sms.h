@@ -17,7 +17,7 @@ namespace api
         METHOD_LIST_BEGIN
           METHOD_ADD(Sms::searchUserSMS,"/searchUserSMS",Post);
           METHOD_ADD(Sms::UpdateSMS,"/updateUserSMS",Put);
-          METHOD_ADD(Sms::getUserSMS,"/getUserSMS",Get);
+          METHOD_ADD(Sms::getUserSMS,"/getUserSMS",Post);
         METHOD_LIST_END
           void searchUserSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
@@ -28,4 +28,10 @@ namespace api
     };
   }
 }
+bool checkUrl(std::string &url);
 
+Json::Value smsCall(std::string &url, 
+                    std::string &path, 
+                    std::string &user_token, 
+                    std::string &secret, 
+                    Json::Value &body);
