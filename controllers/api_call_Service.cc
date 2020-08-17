@@ -86,7 +86,7 @@ void Service::saveUser(const HttpRequestPtr &req,
             auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
                                             user["username"].asString(), 
                                             user["password"].asString(), 
-                                            user["vandor"].asString());
+                                            user["vendor"].asString());
             response = "Usuário salvo com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)

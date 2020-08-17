@@ -164,6 +164,8 @@ Json::Value smsCall(std::string &url,
     Json::Value response;
     std::string sTime = std::to_string(t);
     std::string token =  sha1(sTime+user_token+secret);
+
+    std::cout << sTime+" "+user_token+" "+secret << std::endl;
    
     auto client = HttpClient::newHttpClient("https://"+url);
     auto requestH = HttpRequest::newHttpRequest();
