@@ -28,10 +28,15 @@ namespace api
     };
   }
 }
-bool checkUrl(std::string &url);
-
+Json::Value getCredentials(std::string &vendor);
 Json::Value smsCall(std::string &url, 
                     std::string &path, 
                     std::string &user_token, 
                     std::string &secret, 
                     Json::Value &body);
+struct Urls
+{
+    std::string getUSer = "/api/customer/getData";  
+    std::string wildSearch = "/api/customer/findCustomerForSales";
+    std::string updateUser = "/api/integration/updateMotvCustomer";
+};

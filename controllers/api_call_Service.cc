@@ -6,7 +6,8 @@ using namespace api::call;
 void Service::login(const HttpRequestPtr &req,
            std::function<void (const HttpResponsePtr &)> &&callback)
 {
-    std::string vendor = "", url = "", userToken ="", token = "";
+    std::string vendor = ""; 
+    int profile = 2;
     Json::Value ret, loginData;
     Json::Reader reader; 
 
@@ -26,12 +27,10 @@ void Service::login(const HttpRequestPtr &req,
                                         loginData["login"].asString(),loginData["password"].asString());
         for (auto const &row : r)
         {
-            vendor = row["ds_vendor_name"].as<std::string>();
-            url = row["ds_vendor_url"].as<std::string>();
-            userToken = row["ds_vendor_user_token"].as<std::string>();
-            token = row["ds_vendor_token"].as<std::string>();
+            vendor = row["ds_vendor_name"].as<std::string>();           
+            profile = row["ds_user_profile"].as<int>();
         }
-        if(vendor == "" && url == ""){
+        if(vendor == "" && profile == 2){
             vendor = "Usuário ou senha incorreta!";
         }
     }
@@ -41,10 +40,8 @@ void Service::login(const HttpRequestPtr &req,
         vendor = "Erro ao logar, verifique os logs do servidor!";
     }
 
-    ret["User_Token"] = userToken;
-    ret["token"] = token;
     ret["Vendor"] = vendor;
-    ret["URL"] = url;
+    ret["profile"] = profile;
     
     //ret["token"]=drogon::utils::getUuid();
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -83,10 +80,11 @@ void Service::saveUser(const HttpRequestPtr &req,
     {
         try
         {
-            auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)));",
+            auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor, ds_user_profile) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)),$4);",
                                             user["username"].asString(), 
                                             user["password"].asString(), 
-                                            user["vendor"].asString());
+                                            user["vendor"].asString(),
+                                            user["profile"].asInt());
             response = "Usuário salvo com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -133,8 +131,12 @@ void Service::updateUser(const HttpRequestPtr &req,
     {
         try
         {
-            auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) WHERE CAST(id_user AS CHAR) = $4 ;",
-                                            user["username"].asString(), user["password"].asString(), user["vendor"].asString(), user["id"].asString());        
+            auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)), ds_user_profile=$4 WHERE CAST(id_user AS CHAR) = $5 ;",
+                                            user["username"].asString(), 
+                                            user["password"].asString(), 
+                                            user["vendor"].asString(),
+                                            user["profile"].asInt(), 
+                                            user["id"].asString());        
             response = "Usuário atualizado com sucesso!";
         }
         catch (const drogon::orm::DrogonDbException &e)
@@ -350,7 +352,7 @@ void Service::getUsers(const HttpRequestPtr &req,
     auto clientPtr = drogon::app().getDbClient();
     try
     {
-        auto r = clientPtr->execSqlSync("SELECT id_user, ds_user_name, ds_vendor_name FROM sms.user, sms.vendor WHERE fk_vendor = id_vendor;");
+        auto r = clientPtr->execSqlSync("SELECT * FROM sms.user, sms.vendor WHERE fk_vendor = id_vendor;");
         
         int i = 0;
         for (auto const &row : r)
@@ -358,8 +360,8 @@ void Service::getUsers(const HttpRequestPtr &req,
             obj["UserID"] = row["id_user"].as<std::string>();
             obj["UserName"] = row["ds_user_name"].as<std::string>();
             obj["Vendor"] = row["ds_vendor_name"].as<std::string>();
+            obj["Profile"] = row["ds_user_profile"].as<int>();
             
-
             count = std::to_string(i);
             ret[count] = obj;
             i++;
@@ -398,10 +400,7 @@ void Service::getVendors(const HttpRequestPtr &req,
         {
             obj["VendorID"] = row["id_vendor"].as<std::string>();
             obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
-            obj["VendorUrl"] = row["ds_vendor_url"].as<std::string>();
-            obj["User_token"] = row["ds_vendor_user_token"].as<std::string>();
-            obj["Token"] = row["ds_vendor_token"].as<std::string>();
-
+            
             count = std::to_string(i);
             ret[count] = obj;
             i++;
