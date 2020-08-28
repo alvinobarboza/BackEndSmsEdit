@@ -13,21 +13,25 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     Json::Reader reader; 
 
     reader.parse(std::string{req->getBody()}, search);
-    	
+    
+    
+
 	//-------------------verification for empty body---------------------
     if(req->getBody()=="")
     {
         json["response"] = "Não Há informações no body";  
     }
 	//-------------------verification for empty fields---------------------
-    else if(search["vendor"].asString() == "")
+    else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
     {
-        json["response"] = "Campo vendor vazio!";        
+        json["response"] = "Campo vendor vazio!"; 
+        std::cout << "Undefined \n" ;
     }
     else
     {   
         tempVendor = search["vendor"].asString();
         temp = getCredentials(tempVendor);
+        
         path = urls.wildSearch;
         url = temp["url"].asString();
         secret = temp["token"].asString();
@@ -36,7 +40,8 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
         wild_search["wild_search"] = search["search"];
         searchJ["search"] = wild_search;
         dataJ["data"]=searchJ;
-        
+
+        LOG_DEBUG;
         json = smsCall(url, path, user_token, secret, dataJ);  
     }
     auto resp=HttpResponse::newHttpJsonResponse(json);
@@ -62,7 +67,7 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
         response["response"]= "Não Há informações no body";
     }
  //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()=="")
+    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
     {
         response["WrongData"] = json;
         response["response"] = "Algum campo vazio!";
@@ -71,6 +76,7 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
     {
         tempVendor = json["vendor"].asString();
         temp = getCredentials(tempVendor);
+
         path = urls.updateUser;
         url = temp["url"].asString();
         secret = temp["token"].asString();
@@ -103,7 +109,7 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
-            temp["id"].asString()=="")
+            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
     {
         response["response"] = "Algum campo vazio!";
         response["WrongData"] = json;
@@ -167,13 +173,13 @@ Json::Value smsCall(std::string &url,
    
     auto client = HttpClient::newHttpClient("https://"+url);
     auto requestH = HttpRequest::newHttpRequest();
-    
+    LOG_DEBUG;
     requestH->setMethod(drogon::Post);
     requestH->setPath(path);
     requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
     requestH->addHeader("Content-Type","application/json");    
     requestH->setBody(body.toStyledString());
-    
+    LOG_DEBUG;
     auto a = client->sendRequest(requestH);
 
     if(a.second->getBody() == "")
@@ -184,6 +190,6 @@ Json::Value smsCall(std::string &url,
     {
         reader.parse(std::string{a.second->getBody()}, response);
     }
-    
+    LOG_DEBUG;
     return response;
 }
