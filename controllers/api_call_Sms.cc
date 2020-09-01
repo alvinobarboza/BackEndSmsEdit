@@ -17,7 +17,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     
 
 	//-------------------verification for empty body---------------------
-    if(req->getBody()=="")
+    if(req->getBody()==""||req->getBody()=="undefined")
     {
         json["response"] = "Não Há informações no body";  
     }
@@ -62,7 +62,7 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
     temp = json;
     
  //-------------------verification for empty body---------------------
-    if(req->getBody() == "")
+    if(req->getBody() == ""||req->getBody()=="undefined")
     {
         response["response"]= "Não Há informações no body";
     }
@@ -103,7 +103,7 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     temp = json;
 
  //-------------------verification for empty body---------------------
-    if(req->getBody() == "")
+    if(req->getBody() == ""||req->getBody()=="undefined")
     {
         response["response"]= "Não Há informações no body";
     }
