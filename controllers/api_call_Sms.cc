@@ -14,7 +14,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
 
     reader.parse(std::string{req->getBody()}, search);
     
-    
+    std::cout << req->getBody() << std::endl;
 
 	//-------------------verification for empty body---------------------
     if(req->getBody()==""||req->getBody()=="undefined")
@@ -25,7 +25,8 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
     {
         json["response"] = "Campo vendor vazio!"; 
-        std::cout << "Undefined \n" ;
+        
+        LOG_DEBUG << "Search SMS" << req->getBody();
     }
     else
     {   
@@ -78,6 +79,47 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
         temp = getCredentials(tempVendor);
 
         path = urls.updateUser;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        request["data"] = json["data"]; 
+        
+        response = smsCall(url, path, user_token, secret, request);
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);    
+}
+
+void Sms::createSMS(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback)const
+{
+    LOG_DEBUG << "Create SMS";
+	Urls urls;
+
+	Json::Value json, temp, response, request;
+    std::string tempVendor, path, secret, user_token, url;	
+    Json::Reader reader; 
+    
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+    
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+    {
+        response["WrongData"] = json;
+        response["response"] = "Algum campo vazio!";
+    }
+    else
+    {
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+
+        path = urls.createUser;
         url = temp["url"].asString();
         secret = temp["token"].asString();
         user_token = temp["user"].asString();
@@ -165,6 +207,7 @@ Json::Value smsCall(std::string &url,
     LOG_DEBUG;
     time_t t = time(0);
     Json::Value response;
+
     Json::Reader reader;
     std::string sTime = std::to_string(t);
     std::string token =  sha1(sTime+user_token+secret);
@@ -173,16 +216,18 @@ Json::Value smsCall(std::string &url,
    
     auto client = HttpClient::newHttpClient("https://"+url);
     auto requestH = HttpRequest::newHttpRequest();
-    LOG_DEBUG;
+ //   LOG_DEBUG;
     requestH->setMethod(drogon::Post);
     requestH->setPath(path);
     requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
     requestH->addHeader("Content-Type","application/json");    
     requestH->setBody(body.toStyledString());
-    LOG_DEBUG;
+ //   LOG_DEBUG;
     auto a = client->sendRequest(requestH);
 
-    if(a.second->getBody() == "")
+    //LOG_DEBUG << a.second->getBody();
+
+    if(a.first != ReqResult::Ok)
     {
         response["response"]= "Problemas durante comunicação até servidor MOTV";
     }

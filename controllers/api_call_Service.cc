@@ -255,6 +255,8 @@ void Service::updateVendor(const HttpRequestPtr &req,
     Json::Reader reader; 
 
     reader.parse(std::string{req->getBody()}, vendor);
+
+    std::cout<<req->getBody()<<std::endl;
     
     if(req->getBody()=="")
     {
@@ -266,8 +268,9 @@ void Service::updateVendor(const HttpRequestPtr &req,
 
     auto clientPtr = drogon::app().getDbClient();
 
-    if(vendor == nullptr || vendor["id"].asString() == "" || vendor["vendorname"].asString() == "" || vendor["url"].asString() == "" || vendor["usertoken"].asString() == "" || vendor["token"].asString() == "")
+    if(vendor["id"].asString() == "" || vendor["vendorname"].asString() == "" || vendor["url"].asString() == "" || vendor["usertoken"].asString() == "" || vendor["token"].asString() == "")
     {
+        std::cout<<"second if"<<std::endl;
         response = "Algum campo vazio!";
         ret["ID"] = vendor["id"];
         ret["Vendor_Name"] = vendor["vendorname"];
@@ -279,6 +282,7 @@ void Service::updateVendor(const HttpRequestPtr &req,
     {
         try
         {
+            std::cout<<"before sql"<<std::endl;
             auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR) = $5 ;",
                                             vendor["vendorname"].asString(), vendor["url"].asString(), vendor["usertoken"].asString(), vendor["token"].asString(), vendor["id"].asString());        
             response = "Vendor atualizado com sucesso!";
@@ -400,6 +404,8 @@ void Service::getVendors(const HttpRequestPtr &req,
         {
             obj["VendorID"] = row["id_vendor"].as<std::string>();
             obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
+            obj["Secret"] = row["ds_vendor_token"].as<std::string>();
+            obj["UserSecret"] = row["ds_vendor_user_token"].as<std::string>();
             
             count = std::to_string(i);
             ret[count] = obj;
