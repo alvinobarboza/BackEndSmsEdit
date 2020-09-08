@@ -172,6 +172,177 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     callback(resp);    
 }
 
+
+void Sms::subscribeSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG;
+    Json::Value json, response, temp, request;
+    Json::Reader reader;
+    Urls urls;
+
+    std::string tempVendor, path, secret, user_token, url;
+
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+    //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString()==""||
+            temp["id_user"].asString()==""||
+            temp["id_product"].asString()==""||
+            temp["vendor"].asString()=="undefined")
+    {
+        response["response"] = "Algum campo vazio!";
+        response["WrongData"] = json;
+    }
+    else 
+    {  //-------------------verification if url match existing url on database---------------------
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+        path = urls.subscribeUser;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
+                        ", \"products_id\":"+json["id_product"].asString()+"}}", request);
+
+        response = smsCall(url, path, user_token, secret, request);         
+    }  
+
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
+
+void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG;
+    Json::Value json, response, temp, request;
+    Json::Reader reader;
+    Urls urls;
+
+    std::string tempVendor, path, secret, user_token, url;
+
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+    //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString()==""||
+            temp["id_user"].asString()==""||
+            temp["id_product"].asString()==""||
+            temp["vendor"].asString()=="undefined")
+    {
+        response["response"] = "Algum campo vazio!";
+        response["WrongData"] = json;
+    }
+    else 
+    {  //-------------------verification if url match existing url on database---------------------
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+        path = urls.cancelUser;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
+                        ", \"products_id\":"+json["id_product"].asString()+"}}", request);
+
+        response = smsCall(url, path, user_token, secret, request);         
+    }  
+
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
+
+void Sms::getAllowedProductsSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG << "Get SMS User";
+    Urls urls;
+
+    Json::Value json, temp, response, request;
+    Json::Reader reader; 
+    std::string tempVendor, path, secret, user_token, url;
+
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString()==""||
+            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+    {
+        response["response"] = "Algum campo vazio!";
+        response["WrongData"] = json;
+    }
+    else 
+    {  //-------------------verification if url match existing url on database---------------------
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+        path = urls.getAllowedProductUser;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
+
+        response = smsCall(url, path, user_token, secret, request);         
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
+
+void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG << "Get SMS User";
+    Urls urls;
+
+    Json::Value json, temp, response, request;
+    Json::Reader reader; 
+    std::string tempVendor, path, secret, user_token, url;
+
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString()==""||
+            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+    {
+        response["response"] = "Algum campo vazio!";
+        response["WrongData"] = json;
+    }
+    else 
+    {  //-------------------verification if url match existing url on database---------------------
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+        path = urls.getSubscriptionInfo;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
+
+        response = smsCall(url, path, user_token, secret, request);         
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
+
 Json::Value getCredentials(std::string &vendor)
 {
     Json::Value obj;

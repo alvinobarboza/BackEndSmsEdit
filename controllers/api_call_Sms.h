@@ -19,6 +19,10 @@ namespace api
           METHOD_ADD(Sms::createSMS,"/createUserSMS",Put);
           METHOD_ADD(Sms::UpdateSMS,"/updateUserSMS",Post);
           METHOD_ADD(Sms::getUserSMS,"/getUserSMS",Post);
+          METHOD_ADD(Sms::subscribeSMS,"/subscribeUserSMS",Put);
+          METHOD_ADD(Sms::cancelSubscriptionSMS,"/cancelSubscriptionUserSMS",Put);
+          METHOD_ADD(Sms::getAllowedProductsSMS,"/getAllowedProductsUserSMS",Post);
+          METHOD_ADD(Sms::getSubscriptionSMS,"/getSubscriptionUserSMS",Post);
         METHOD_LIST_END
           void searchUserSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
@@ -27,6 +31,14 @@ namespace api
           void createSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
           void getUserSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void subscribeSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void cancelSubscriptionSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void getAllowedProductsSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void getSubscriptionSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
     };
   }
@@ -43,4 +55,8 @@ struct Urls
     std::string wildSearch = "/api/customer/findCustomerForSales";
     std::string updateUser = "/api/integration/updateMotvCustomer";
     std::string createUser = "/api/integration/createMotvCustomer";
+    std::string subscribeUser = "/api/integration/subscribe";
+    std::string cancelUser = "/api/integration/cancel";
+    std::string getAllowedProductUser = "/api/sales/getAllowedProductsForCustomer";
+    std::string getSubscriptionInfo = "/api/subscription/getCustomerSubscriptionInfo";
 };
