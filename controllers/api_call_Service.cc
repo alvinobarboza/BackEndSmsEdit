@@ -349,7 +349,8 @@ void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
     LOG_DEBUG<<"Get All Users -> Method = getUsers";
-    
+    std::cout << req->getParameter("json") << std::endl;
+
     std::string response = "", count = "";
     Json::Value ret, obj;
 

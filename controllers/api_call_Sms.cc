@@ -172,7 +172,6 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     callback(resp);    
 }
 
-
 void Sms::subscribeSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -359,7 +358,9 @@ Json::Value getCredentials(std::string &vendor)
             obj["url"] = row["ds_vendor_url"].as<std::string>();
                         
             i++;
-        }                
+
+            std::cout << obj["url"].asString() << "\n";
+        }                  
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
@@ -378,6 +379,12 @@ Json::Value smsCall(std::string &url,
     LOG_DEBUG;
     time_t t = time(0);
     Json::Value response;
+
+    if (url == "")
+    {
+        response["response"] = "Url vazia";
+        return response;
+    }    
 
     Json::Reader reader;
     std::string sTime = std::to_string(t);

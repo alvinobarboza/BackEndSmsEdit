@@ -16,8 +16,8 @@ namespace api
       public:
         METHOD_LIST_BEGIN
           METHOD_ADD(Sms::searchUserSMS,"/searchUserSMS",Post);
-          METHOD_ADD(Sms::createSMS,"/createUserSMS",Put);
-          METHOD_ADD(Sms::UpdateSMS,"/updateUserSMS",Post);
+          METHOD_ADD(Sms::createSMS,"/createUserSMS",Post);
+          METHOD_ADD(Sms::UpdateSMS,"/updateUserSMS",Put);
           METHOD_ADD(Sms::getUserSMS,"/getUserSMS",Post);
           METHOD_ADD(Sms::subscribeSMS,"/subscribeUserSMS",Put);
           METHOD_ADD(Sms::cancelSubscriptionSMS,"/cancelSubscriptionUserSMS",Put);
