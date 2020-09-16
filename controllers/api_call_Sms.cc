@@ -338,7 +338,7 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
 
         response = smsCall(url, path, user_token, secret, request);         
     }  
-    auto resp=HttpResponse::newHttpJsonResponse(response);
+    auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
 
@@ -356,10 +356,8 @@ Json::Value getCredentials(std::string &vendor)
             obj["user"] = row["ds_vendor_user_token"].as<std::string>();
             obj["token"] = row["ds_vendor_token"].as<std::string>();
             obj["url"] = row["ds_vendor_url"].as<std::string>();
-                        
+        
             i++;
-
-            std::cout << obj["url"].asString() << "\n";
         }                  
     }
     catch (const drogon::orm::DrogonDbException &e)
@@ -376,13 +374,14 @@ Json::Value smsCall(std::string &url,
                     std::string &secret, 
                     Json::Value &body)
 {
-    LOG_DEBUG;
+    LOG_DEBUG << "Beginning";
     time_t t = time(0);
     Json::Value response;
 
     if (url == "")
     {
         response["response"] = "Url vazia";
+        LOG_DEBUG << "End";
         return response;
     }    
 
@@ -390,29 +389,28 @@ Json::Value smsCall(std::string &url,
     std::string sTime = std::to_string(t);
     std::string token =  sha1(sTime+user_token+secret);
 
-    std::cout << sTime+" "+user_token+" "+secret << std::endl;
+    std::cout << user_token+":"+sTime+":"+token << std::endl;
    
     auto client = HttpClient::newHttpClient("https://"+url);
     auto requestH = HttpRequest::newHttpRequest();
- //   LOG_DEBUG;
+    //LOG_DEBUG;
     requestH->setMethod(drogon::Post);
     requestH->setPath(path);
     requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
     requestH->addHeader("Content-Type","application/json");    
     requestH->setBody(body.toStyledString());
- //   LOG_DEBUG;
-    auto a = client->sendRequest(requestH);
-
-    //LOG_DEBUG << a.second->getBody();
+    //LOG_DEBUG;
+    auto a = client->sendRequest(requestH, 1);
+    //LOG_DEBUG ;
 
     if(a.first != ReqResult::Ok)
     {
-        response["response"]= "Problemas durante comunicação até servidor MOTV";
+        response["response"] = "Problemas durante comunicação até servidor MOTV";
     }
     else
     {
         reader.parse(std::string{a.second->getBody()}, response);
     }
-    LOG_DEBUG;
+    LOG_DEBUG << "End";
     return response;
 }
