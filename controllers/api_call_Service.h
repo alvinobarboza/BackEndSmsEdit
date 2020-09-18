@@ -3,6 +3,7 @@
 #include <drogon/drogon.h>
 #include <iostream>
 #include <future>
+#include "Dao.h"
 
 using namespace drogon;
 namespace api
@@ -21,7 +22,9 @@ namespace api
                 METHOD_ADD(Service::updateVendor,"/updateVendor",Put);
                 METHOD_ADD(Service::deleteVendor,"/deleteVendor",Delete);
                 METHOD_ADD(Service::getVendors,"/getVendors",Get);
-                METHOD_ADD(Service::getUsers,"/getUsers",Get);                
+                METHOD_ADD(Service::getUsers,"/getUsers",Get);
+                METHOD_ADD(Service::searchVendors,"/getVendors",Post);
+                METHOD_ADD(Service::searchUsers,"/getUsers",Post);                         
             METHOD_LIST_END
             
             void login(const HttpRequestPtr &req,
@@ -49,6 +52,12 @@ namespace api
                             std::function<void (const HttpResponsePtr &)> &&callback) const;
 
             void getVendors(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback) const;
+
+            void searchUsers(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback) const;
+
+            void searchVendors(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback) const;                
         };
     }
