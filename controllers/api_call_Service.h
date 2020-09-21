@@ -23,8 +23,8 @@ namespace api
                 METHOD_ADD(Service::deleteVendor,"/deleteVendor",Delete);
                 METHOD_ADD(Service::getVendors,"/getVendors",Get);
                 METHOD_ADD(Service::getUsers,"/getUsers",Get);
-                METHOD_ADD(Service::searchVendors,"/getVendors",Post);
-                METHOD_ADD(Service::searchUsers,"/getUsers",Post);                         
+                METHOD_ADD(Service::searchVendors,"/searchVendors",Post);
+                METHOD_ADD(Service::searchUsers,"/searchUsers",Post);                         
             METHOD_LIST_END
             
             void login(const HttpRequestPtr &req,
