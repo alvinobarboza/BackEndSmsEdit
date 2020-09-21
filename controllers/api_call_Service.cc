@@ -34,6 +34,7 @@ void Service::saveUser(const HttpRequestPtr &req,
 
     Json::Value ret, user; 
     Json::Reader reader; 
+    Dao dao;
 
     reader.parse(std::string{req->getBody()}, user);
     
@@ -42,43 +43,7 @@ void Service::saveUser(const HttpRequestPtr &req,
         ret["response"] = "Não Há informações no body";
     } 
 
-    LOG_DEBUG<<"User saved -> "<<user["username"].asString()<<" Method = save";
-    
-    std::string response = "";
-
-    auto clientPtr = drogon::app().getDbClient();
-
-    if(user["username"].asString() == "" || 
-        user["password"].asString() == "" || 
-        user["vendor"].asString() == "" ||
-        user["name"].asString() == "")
-    {
-        response = "Algum campo está vazio";
-        ret["Username"] = user["username"];
-        ret["Password"] = user["password"];
-        ret["Vendor"] = user["vendor"];
-        ret["Name"] = user["vendor"];
-    }
-    else
-    {
-        try
-        {
-            auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor, ds_user_profile, ds_profile_name) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)),$4, $5);",
-                                            user["username"].asString(), 
-                                            user["password"].asString(), 
-                                            user["vendor"].asString(),
-                                            user["profile"].asInt(),
-                                            user["name"].asInt());
-            response = "Usuário salvo com sucesso!";
-        }
-        catch (const drogon::orm::DrogonDbException &e)
-        {
-            LOG_DEBUG << "catch:" << e.base().what();
-            response = "Erro ao salvar, verifique os logs do servidor!";
-        }
-    }    
-
-    ret["Response"] = response;
+    ret = dao.saveUser(user);
 
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
@@ -333,38 +298,10 @@ void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
     LOG_DEBUG<<"Get All Users -> Method = getUsers";
-    std::cout << req->getParameter("json") << std::endl;
+    Dao dao;
+    Json::Value ret;
 
-    std::string response = "", count = "";
-    Json::Value ret, obj;
-
-    auto clientPtr = drogon::app().getDbClient();
-    try
-    {
-        auto r = clientPtr->execSqlSync("SELECT * FROM sms.user, sms.vendor WHERE fk_vendor = id_vendor;");
-        
-        int i = 0;
-        for (auto const &row : r)
-        {
-            obj["UserID"] = row["id_user"].as<std::string>();
-            obj["UserName"] = row["ds_user_name"].as<std::string>();
-            obj["Vendor"] = row["ds_vendor_name"].as<std::string>();
-            obj["Profile"] = row["ds_user_profile"].as<int>();
-            
-            count = std::to_string(i);
-            ret[count] = obj;
-            i++;
-        }
-        response = "Usuários listados com sucesso!";
-        
-    }
-    catch (const drogon::orm::DrogonDbException &e)
-    {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao listar, verifique os logs do servidor!";
-    }
-
-    ret["Response"] = response;
+    ret = dao.getUsers();
         
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
@@ -376,36 +313,9 @@ void Service::getVendors(const HttpRequestPtr &req,
 {
     LOG_DEBUG<<"Get All Vendors -> Method = getVendors";
     
-    std::string response = "", count = "";
-    Json::Value ret, obj;
-
-    auto clientPtr = drogon::app().getDbClient();
-    try
-    {
-        auto r = clientPtr->execSqlSync("SELECT * FROM sms.vendor;");
-        
-        int i = 0;
-        for (auto const &row : r)
-        {
-            obj["VendorID"] = row["id_vendor"].as<std::string>();
-            obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
-            obj["Secret"] = row["ds_vendor_token"].as<std::string>();
-            obj["UserSecret"] = row["ds_vendor_user_token"].as<std::string>();
-            
-            count = std::to_string(i);
-            ret[count] = obj;
-            i++;
-        }
-        response = "Vendors listados com sucesso!";
-        
-    }
-    catch (const drogon::orm::DrogonDbException &e)
-    {
-        LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao listar, verifique os logs do servidor!";
-    }
-
-    ret["Response"] = response;
+    Json::Value ret;
+    Dao dao;
+    ret = dao.getVendors();
         
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
