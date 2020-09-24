@@ -23,6 +23,7 @@ namespace api
           METHOD_ADD(Sms::cancelSubscriptionSMS,"/cancelSubscriptionUserSMS",Put);
           METHOD_ADD(Sms::getAllowedProductsSMS,"/getAllowedProductsUserSMS",Post);
           METHOD_ADD(Sms::getSubscriptionSMS,"/getSubscriptionUserSMS",Post);
+          METHOD_ADD(Sms::getPortalAvailable,"/getPortalAvailable",Post);
         METHOD_LIST_END
           void searchUserSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
@@ -39,6 +40,8 @@ namespace api
           void getAllowedProductsSMS(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
           void getSubscriptionSMS(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const;
+          void getPortalAvailable(const HttpRequestPtr &req,
                           std::function<void (const HttpResponsePtr &)> &&callback) const;
     };
   }
@@ -59,4 +62,5 @@ struct Urls
     std::string cancelUser = "/api/integration/cancel";
     std::string getAllowedProductUser = "/api/sales/getAllowedProductsForCustomer";
     std::string getSubscriptionInfo = "/api/subscription/getCustomerSubscriptionInfo";
+    std::string getPortalAvailable = "/api/devices/motv/getWhitelistedPortalPairs";
 };

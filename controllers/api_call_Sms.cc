@@ -342,8 +342,50 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
     callback(resp);
 }
 
+void Sms::getPortalAvailable(const HttpRequestPtr &req,
+                          std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG << "Get SMS Portal";
+	Urls urls;
+
+	Json::Value json, temp, response, request;
+    std::string tempVendor, path, secret, user_token, url;	
+    Json::Reader reader; 
+    
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+    
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+    {
+        response["WrongData"] = json;
+        response["response"] = "Algum campo vazio!";
+    }
+    else
+    {
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+
+        path = urls.getPortalAvailable;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        reader.parse("{\"data\":{}}", request); 
+        
+        response = smsCall(url, path, user_token, secret, request);
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
+
 Json::Value getCredentials(std::string &vendor)
 {
+    LOG_DEBUG;
     Json::Value obj;
     auto clientPtr = drogon::app().getDbClient();
     try
@@ -356,7 +398,6 @@ Json::Value getCredentials(std::string &vendor)
             obj["user"] = row["ds_vendor_user_token"].as<std::string>();
             obj["token"] = row["ds_vendor_token"].as<std::string>();
             obj["url"] = row["ds_vendor_url"].as<std::string>();
-        
             i++;
         }                  
     }
@@ -397,11 +438,12 @@ Json::Value smsCall(std::string &url,
     requestH->setMethod(drogon::Post);
     requestH->setPath(path);
     requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
-    requestH->addHeader("Content-Type","application/json");    
     requestH->setBody(body.toStyledString());
     //LOG_DEBUG;
     auto a = client->sendRequest(requestH, 1);
     //LOG_DEBUG ;
+
+    //std::cout << a.second->getBody();
 
     if(a.first != ReqResult::Ok)
     {

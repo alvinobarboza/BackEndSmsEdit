@@ -116,14 +116,9 @@ Json::Value Dao::updateUser(Json::Value &request)
     }
     if(i==6)
     {        
-        if(request["username"].asString() == ""|| 
-            request["password"].asString() == ""|| 
-            request["vendor"].asString() == ""||
-            request["name"].asString() == ""||
-            request["id"].asString() == "")
+        if(request["id"].asString() == "")
         {
-            temp["response"] = "Algum campo vazio";
-            temp["requestSent"] = request;
+            temp["response"] = "ID não informado";
             return temp;
         }
         else
@@ -131,7 +126,13 @@ Json::Value Dao::updateUser(Json::Value &request)
             auto clientPtr = drogon::app().getDbClient();
             try
             {
-                auto r = clientPtr->execSqlSync("UPDATE sms.user SET ds_user_name=$1, ds_user_password=$2, fk_vendor = (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)), ds_user_profile=$4, ds_profile_name=$6 WHERE CAST(id_user AS CHAR(10)) = $5;",
+                auto r = clientPtr->execSqlSync("UPDATE sms.user "
+												"SET ds_user_name= CASE WHEN $1 = '' THEN ds_user_name ELSE $1 END, "
+												"	 ds_user_password=CASE WHEN $2 = '' THEN ds_user_password ELSE $2 END, "
+												"	 fk_vendor = CASE WHEN $3 = '' THEN fk_vendor ELSE (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) END, "
+												"	 ds_user_profile=$4, "
+												"	 ds_profile_name=CASE WHEN $6 = '' THEN ds_profile_name ELSE $6 END "
+												"WHERE CAST(id_user AS CHAR(10)) = $5;",
                                                 request["username"].asString(), 
                                                 request["password"].asString(), 
                                                 request["vendor"].asString(),
@@ -272,14 +273,9 @@ Json::Value Dao::updateVendor(Json::Value &request)
     }
     if(i==5)
     {        
-        if(request["id"].asString() == ""||
-            request["vendorname"].asString() == ""|| 
-            request["url"].asString() == ""|| 
-            request["usertoken"].asString() == ""||
-            request["token"].asString() == "")
+        if(request["id"].asString() == "")
         {
-            temp["response"] = "Algum campo vazio";
-            temp["requestSent"] = request;
+            temp["response"] = "ID não informado";
             return temp;
         }
         else
@@ -287,13 +283,18 @@ Json::Value Dao::updateVendor(Json::Value &request)
             auto clientPtr = drogon::app().getDbClient();
             try
             {
-                auto r = clientPtr->execSqlSync("UPDATE sms.vendor SET ds_vendor_name=$1, ds_vendor_url=$2, ds_vendor_user_token=$3, ds_vendor_token=$4 WHERE CAST(id_vendor AS CHAR(10)) = $5 ;",
+                auto r = clientPtr->execSqlSync("UPDATE sms.vendor "
+                                                "SET ds_vendor_name= CASE WHEN $1 = '' THEN ds_vendor_name ELSE $1 END, "
+                                                "   ds_vendor_url = CASE WHEN $2 = '' THEN ds_vendor_url ELSE $2 END, "
+                                                "   ds_vendor_user_token = CASE WHEN $3 = '' THEN ds_vendor_user_token ELSE $3 END, "
+                                                "   ds_vendor_token = CASE WHEN $4 = '' THEN ds_vendor_token ELSE $4 END "
+                                                "WHERE CAST(id_vendor AS CHAR(10)) = $5 ;",
                                                 request["vendorname"].asString(), 
                                                 request["url"].asString(), 
                                                 request["usertoken"].asString(),
                                                 request["token"].asString(),
                                                 request["id"].asString());
-                response = "Vendor criado com sucesso!";
+                response = "Vendor atualizado com sucesso!";
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
@@ -400,6 +401,7 @@ Json::Value Dao::getVendors()
             obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
             obj["Secret"] = row["ds_vendor_token"].as<std::string>();
             obj["UserSecret"] = row["ds_vendor_user_token"].as<std::string>();
+            obj["URL"] = row["ds_vendor_url"].as<std::string>();
             
             count = std::to_string(i);
             temp[count] = obj;
