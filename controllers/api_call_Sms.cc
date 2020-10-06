@@ -5,7 +5,7 @@ using namespace api::call;
 void Sms::searchUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
-    LOG_DEBUG << "Search SMS";
+    LOG_DEBUG ;
     Urls urls;
 
 	std::string tempVendor, path, secret, user_token, url;   
@@ -52,7 +52,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
 void Sms::UpdateSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
-    LOG_DEBUG << "Update SMS";
+    LOG_DEBUG ;
 	Urls urls;
 
 	Json::Value json, temp, response, request;
@@ -93,7 +93,7 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
 void Sms::createSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
-    LOG_DEBUG << "Create SMS";
+    LOG_DEBUG ;
 	Urls urls;
 
 	Json::Value json, temp, response, request;
@@ -134,7 +134,7 @@ void Sms::createSMS(const HttpRequestPtr &req,
 void Sms::getUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    LOG_DEBUG << "Get SMS User";
+    LOG_DEBUG ;
     Urls urls;
 
     Json::Value json, temp, response, request;
@@ -385,7 +385,6 @@ void Sms::getPortalAvailable(const HttpRequestPtr &req,
 
 Json::Value getCredentials(std::string &vendor)
 {
-    LOG_DEBUG;
     Json::Value obj;
     auto clientPtr = drogon::app().getDbClient();
     try
@@ -415,7 +414,6 @@ Json::Value smsCall(std::string &url,
                     std::string &secret, 
                     Json::Value &body)
 {
-    LOG_DEBUG << "Beginning";
     time_t t = time(0);
     Json::Value response;
 
@@ -439,7 +437,7 @@ Json::Value smsCall(std::string &url,
     requestH->setPath(path);
     requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
     requestH->setBody(body.toStyledString());
-    //LOG_DEBUG;
+    LOG_DEBUG << body.toStyledString();
     auto a = client->sendRequest(requestH, 1);
     //LOG_DEBUG ;
 
@@ -452,7 +450,7 @@ Json::Value smsCall(std::string &url,
     else
     {
         reader.parse(std::string{a.second->getBody()}, response);
+        LOG_DEBUG << "End" << response.toStyledString();
     }
-    LOG_DEBUG << "End";
     return response;
 }
