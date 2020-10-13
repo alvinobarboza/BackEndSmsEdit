@@ -36,6 +36,9 @@ CREATE TABLE sms.customer (
     id_customer bigint DEFAULT nextval('sms.seq_customer'::regclass) NOT NULL,
     ds_customer_name character varying(50) NOT NULL,
     ds_customer_lastname character varying(50) NOT NULL,
+    ds_customer_login character varying(50) NOT NULL,
+    ds_customer_profile_name character varying(50) NOT NULL,
+    dt_customer_birthdate date NOT NULL,
     PRIMARY KEY (id_customer)    
 );
 

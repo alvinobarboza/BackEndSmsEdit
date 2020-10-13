@@ -4,6 +4,7 @@
 #include <iostream>
 #include <future>
 #include "SystemDao.h"
+#include "Sms_user_DAO.h"
 
 using namespace drogon;
 namespace api
@@ -24,7 +25,8 @@ namespace api
                 METHOD_ADD(Service::getVendors,"/getVendors",Get);
                 METHOD_ADD(Service::getUsers,"/getUsers",Get);
                 METHOD_ADD(Service::searchVendors,"/searchVendors",Post);
-                METHOD_ADD(Service::searchUsers,"/searchUsers",Post);                         
+                METHOD_ADD(Service::searchUsers,"/searchUsers",Post);
+                METHOD_ADD(Service::tests,"/test",Post);
             METHOD_LIST_END
             
             void login(const HttpRequestPtr &req,
@@ -58,8 +60,10 @@ namespace api
                             std::function<void (const HttpResponsePtr &)> &&callback) const;
 
             void searchVendors(const HttpRequestPtr &req,
-                            std::function<void (const HttpResponsePtr &)> &&callback) const;                
-            
+                            std::function<void (const HttpResponsePtr &)> &&callback) const;
+
+            void tests(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback) const;
         };
     }
 }

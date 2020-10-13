@@ -236,3 +236,34 @@ void Service::searchVendors(const HttpRequestPtr &req,
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
+
+void Service::tests(const HttpRequestPtr &req,
+                std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG;
+    Json::Reader reader;
+    Json::Value temp, response;
+    std::vector<std::string> keyNames;
+    SmsDAO dao;
+    reader.parse(std::string{req->getBody()}, temp);
+
+    response = dao.getUsers();
+
+    // Json::Value array = temp["array"];
+    // keyNames = array.getMemberNames();
+
+    // int i = 0;
+    // std::cout << array << std::endl;
+    // for(Json::Value &key : array)
+    // {
+    //     for(Json::Value &value : key)
+    //     {
+    //         std::cout << value <<" -> " + keyNames[i] << std::endl;
+    //     }
+    //     i++;
+    // }
+        
+    LOG_DEBUG;
+    auto resp = HttpResponse::newHttpJsonResponse(response);
+    callback(resp);
+}
