@@ -247,7 +247,9 @@ void Service::tests(const HttpRequestPtr &req,
     SmsDAO dao;
     reader.parse(std::string{req->getBody()}, temp);
 
-    response = dao.getUsers();
+    std::string string = "2";
+
+    response = dao.searchUsers(temp);
 
     // Json::Value array = temp["array"];
     // keyNames = array.getMemberNames();
@@ -263,7 +265,7 @@ void Service::tests(const HttpRequestPtr &req,
     //     i++;
     // }
         
-    LOG_DEBUG;
+    // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
