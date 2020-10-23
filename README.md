@@ -32,21 +32,23 @@ CREATE TABLE sms."user" (
     PRIMARY KEY (id_user)
 );
 
+CREATE TABLE sms.contact (
+    id_contact bigint DEFAULT nextval('sms.seq_contact'::regclass) NOT NULL,
+    ds_contact_email character varying(150) NOT NULL,
+    ds_contact_phone1 character varying(150) NOT NULL,
+	ds_contact_phone2 character varying(150) NOT NULL,    
+    PRIMARY KEY(id_contact)
+);
+
 CREATE TABLE sms.customer (
     id_customer bigint DEFAULT nextval('sms.seq_customer'::regclass) NOT NULL,
     ds_customer_name character varying(50) NOT NULL,
     ds_customer_lastname character varying(50) NOT NULL,
     ds_customer_login character varying(50) NOT NULL,
     ds_customer_profile_name character varying(50) NOT NULL,
+	ds_customer_sms_pair_id character varying(10),
     dt_customer_birthdate date NOT NULL,
+	fk_contact BIGINT NOT NULL REFERENCES sms.contact(id_contact),
     PRIMARY KEY (id_customer)    
-);
-
-CREATE TABLE sms.contact (
-    id_contact bigint DEFAULT nextval('sms.seq_contact'::regclass) NOT NULL,
-    ds_contact_type character varying(150) NOT NULL,
-    ds_contact_content character varying(150) NOT NULL,
-    fk_customer BIGINT NOT NULL REFERENCES sms.customer(id_customer),
-    PRIMARY KEY(id_contact)
 );
 ```

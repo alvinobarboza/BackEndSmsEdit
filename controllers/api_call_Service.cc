@@ -245,9 +245,8 @@ void Service::tests(const HttpRequestPtr &req,
     Json::Value temp, response;
     std::vector<std::string> keyNames;
     SmsDAO dao;
+    std::string id = "3"; 
     reader.parse(std::string{req->getBody()}, temp);
-
-    std::string string = "2";
 
     response = dao.searchUsers(temp);
 
