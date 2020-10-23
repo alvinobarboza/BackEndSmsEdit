@@ -34,9 +34,9 @@ CREATE TABLE sms."user" (
 
 CREATE TABLE sms.contact (
     id_contact bigint DEFAULT nextval('sms.seq_contact'::regclass) NOT NULL,
-    ds_contact_email character varying(150) NOT NULL,
-    ds_contact_phone1 character varying(150) NOT NULL,
-	ds_contact_phone2 character varying(150) NOT NULL,    
+    ds_contact_email character varying(150),
+    ds_contact_phone1 character varying(150),
+	ds_contact_phone2 character varying(150),    
     PRIMARY KEY(id_contact)
 );
 
