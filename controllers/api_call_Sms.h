@@ -6,6 +6,8 @@
 #include <thread>         
 #include <chrono>
 #include "sha1.h"
+#include "Sms_user_DAO.h"
+
 using namespace drogon;
 namespace api
 {
@@ -52,6 +54,9 @@ Json::Value smsCall(std::string &url,
                     std::string &user_token, 
                     std::string &secret, 
                     Json::Value &body);
+
+Json::Value integratedSearch(Json::Value searchResult);
+
 struct Urls
 {
     std::string getUSer = "/api/customer/getData";  

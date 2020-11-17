@@ -5,7 +5,7 @@
 #include <future>
 #include "SystemDao.h"
 #include "Sms_user_DAO.h"
-
+#include "sha1.h"
 using namespace drogon;
 namespace api
 {

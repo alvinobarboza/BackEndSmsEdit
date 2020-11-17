@@ -248,21 +248,28 @@ void Service::tests(const HttpRequestPtr &req,
     std::string id = "3"; 
     reader.parse(std::string{req->getBody()}, temp);
 
-    response = dao.searchUsers(temp);
+    //response = dao.searchUsers(temp);
 
-    // Json::Value array = temp["array"];
-    // keyNames = array.getMemberNames();
+    std::string secret = "";
 
-    // int i = 0;
-    // std::cout << array << std::endl;
-    // for(Json::Value &key : array)
-    // {
-    //     for(Json::Value &value : key)
-    //     {
-    //         std::cout << value <<" -> " + keyNames[i] << std::endl;
-    //     }
-    //     i++;
-    // }
+    time_t t = time(0);
+    std::string sTime = std::to_string(t);
+    std::string user_token = "youcast.api";
+    // sms 
+
+    if(temp["type"].asString() == "sms")
+    {
+        secret = "rv2o43o4nltwx29klnc4zcm45zvi9wmfi2o1bbat";
+    }else
+    {
+        secret = "k0wzh85hamcogic5inn1tjsjkcxeosmrggrd6bju";
+    }
+
+    // mw
+
+    std::string token =  sha1(sTime+user_token+secret);
+
+    response["sms"] = user_token+":"+sTime+":"+token;
         
     // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);

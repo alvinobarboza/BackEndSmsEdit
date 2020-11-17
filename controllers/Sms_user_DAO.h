@@ -14,6 +14,7 @@ class SmsDAO
         Json::Value deleteUser(Json::Value &request);
         Json::Value getUsers();
         Json::Value getUserById(std::string &id);
+        Json::Value getUserByMotvId(std::string &id);
         Json::Value searchUsers(Json::Value &request);
 };
 bool isEmpty(Json::Value &value);

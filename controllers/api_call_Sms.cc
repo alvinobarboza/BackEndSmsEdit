@@ -1,7 +1,56 @@
 #include "api_call_Sms.h"
 using namespace api::call;
 
-//=====================================test get API =============================
+
+// --- integrated --
+void Sms::getUserSMS(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback) const
+{
+    LOG_DEBUG ;
+    Urls urls;
+
+    Json::Value json, temp, response, request;
+    Json::Reader reader; 
+    std::string tempVendor, path, secret, user_token, url;
+
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString()==""||
+            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+    {
+        response["response"] = "Algum campo vazio!";
+        response["WrongData"] = json;
+    }
+    else 
+    {  //-------------------verification if url match existing url on database---------------------
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+        path = urls.getUSer;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        std::string id = json["id"].asString();
+        reader.parse("{\"data\":{\"viewers_id\":"+id+"}}", request);
+
+        response = smsCall(url, path, user_token, secret, request); 
+
+        if(response["status"].asInt() == 1)
+        {
+            SmsDAO dao;
+            response = dao.getUserByMotvId(id);
+        }
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);    
+}
+
 void Sms::searchUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -9,7 +58,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     Urls urls;
 
 	std::string tempVendor, path, secret, user_token, url;   
-    Json::Value json, dataJ, searchJ, wild_search, search, temp, request;
+    Json::Value response, dataJ, searchJ, wild_search, search, temp, request;
     Json::Reader reader; 
 
     reader.parse(std::string{req->getBody()}, search);
@@ -19,12 +68,12 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
 	//-------------------verification for empty body---------------------
     if(req->getBody()==""||req->getBody()=="undefined")
     {
-        json["response"] = "Não Há informações no body";  
+        response["response"] = "Não Há informações no body";  
     }
 	//-------------------verification for empty fields---------------------
     else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
     {
-        json["response"] = "Campo vendor vazio!"; 
+        response["response"] = "Campo vendor vazio!"; 
         
         LOG_DEBUG << "Search SMS" << req->getBody();
     }
@@ -43,9 +92,13 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
         dataJ["data"]=searchJ;
 
         LOG_DEBUG;
-        json = smsCall(url, path, user_token, secret, dataJ);  
+        response = smsCall(url, path, user_token, secret, dataJ); 
+
+        integratedSearch(response);
+
+        //std::cout << response << "\n";
     }
-    auto resp=HttpResponse::newHttpJsonResponse(json);
+    auto resp=HttpResponse::newHttpJsonResponse(temp);
     callback(resp);    
 }
 
@@ -126,47 +179,6 @@ void Sms::createSMS(const HttpRequestPtr &req,
         request["data"] = json["data"]; 
         
         response = smsCall(url, path, user_token, secret, request);
-    }  
-    auto resp=HttpResponse::newHttpJsonResponse(response);
-    callback(resp);    
-}
-
-void Sms::getUserSMS(const HttpRequestPtr &req,
-                            std::function<void (const HttpResponsePtr &)> &&callback) const
-{
-    LOG_DEBUG ;
-    Urls urls;
-
-    Json::Value json, temp, response, request;
-    Json::Reader reader; 
-    std::string tempVendor, path, secret, user_token, url;
-
-    reader.parse(std::string{req->getBody()}, json);
-    temp = json;
-
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"]= "Não Há informações no body";
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
-        path = urls.getUSer;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
-        reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
-
-        response = smsCall(url, path, user_token, secret, request);         
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
@@ -448,9 +460,60 @@ Json::Value smsCall(std::string &url,
         response["response"] = "Problemas durante comunicação até servidor MOTV";
     }
     else
-    {
+    {        
         reader.parse(std::string{a.second->getBody()}, response);
-        LOG_DEBUG << "End" << response.toStyledString();
+        LOG_DEBUG << "End";
     }
     return response;
+}
+
+Json::Value integratedSearch(Json::Value searchResult)
+{
+    Json::Value temp;
+
+    if(searchResult["status"].asInt() == 1)
+    {
+        SmsDAO dao;
+        std::string id;
+        Json::Value returnResult, unit;
+        LOG_DEBUG << searchResult["status"].asString();
+        for (Json::Value &user : searchResult["response"])
+        {            
+            id = user["viewers_id"].asString();
+            Json::Value temp = dao.getUserByMotvId(id);
+            LOG_DEBUG ;
+            if(temp["0"].empty())
+            {
+                LOG_DEBUG ;
+                unit["userid"]      = "";
+                unit["userSMSid"]   = id;
+                unit["profilename"] = user["devices"][0]["motv_portals_name"];
+                unit["name"]        = user["viewers_firstname"];
+                unit["lastname"]    = user["viewers_lastname"];
+                unit["login"]       = user["devices"][0]["device_motv_login"];
+                unit["birthdate"]   = "";
+                unit["email"]       = "";
+                unit["tel1"]        = "";
+                unit["tel2"]        = "";
+
+                returnResult[id] = unit;
+            }
+            else
+            {
+                returnResult[id] = temp["0"];
+                LOG_DEBUG ;
+            }
+                        
+            //std::cout << returnResult << "\n";
+        }
+        LOG_DEBUG ;
+        std::cout << returnResult;
+        return returnResult;
+    }
+    else
+    {
+        LOG_DEBUG ;
+        std::cout << searchResult;
+        return searchResult;
+    }
 }
