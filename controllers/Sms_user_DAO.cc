@@ -3,48 +3,38 @@
 Json::Value SmsDAO::saveUser(Json::Value &request)
 {
     LOG_DEBUG;
-    std::string response;
+    int response;
     Json::Value temp; 
+    LOG_DEBUG;
     
-    if(isEmpty(request))
+    auto clientPtr = drogon::app().getDbClient();
+    try
     {
-        temp["response"] = "Algum campo vazio";
-        temp["requestSent"] = request;
-        return temp;
+        
+       
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.customer(ds_customer_name, ds_customer_lastname, ds_customer_login, ds_customer_profile_name, dt_customer_birthdate, ds_customer_sms_pair_id, ds_contact_email, ds_contact_phone1, ds_contact_phone2, ds_customer_sms_pair_id) "
+                                        "VALUES ($1, $2, $3, $4, to_date($5, 'DDMMYYYY'), $6, $7, $8, $9, $10);",
+                                        request["name"].asString(),
+                                        request["lastname"].asString(),
+                                        request["login"].asString(),
+                                        request["profilename"].asString(),
+                                        request["birthdate"].asString(),
+                                        request["idsms"].asString(),                                            
+                                        request["email"].asString(),
+                                        request["tel1"].asString(),
+                                        request["tel2"].asString()
+                                        request["smsID"].asString());
+        response = 1;
+        LOG_DEBUG;
+       
     }
-    else
+    catch (const drogon::orm::DrogonDbException &e)
     {
-        auto clientPtr = drogon::app().getDbClient();
-        try
-        {
-            //Begin----------------------save contacts---------------------------
-            
-            auto r1 = clientPtr->execSqlSync("INSERT INTO sms.contact(ds_contact_email, ds_contact_phone1, ds_contact_phone2) "
-                                            "VALUES ($1, $2, $3);",
-                                            request["email"].asString(),
-                                            request["tel1"].asString(),
-                                            request["tel2"].asString());
-                   
-            //End----------------------------------------------------------------
-            if(r1.affectedRows() > 0){
-                auto r = clientPtr->execSqlSync("INSERT INTO sms.customer(ds_customer_name, ds_customer_lastname, ds_customer_login, ds_customer_profile_name, dt_customer_birthdate, ds_customer_sms_pair_id, fk_contact) "
-                                                "VALUES ($1, $2, $3, $4, to_date($5, 'DDMMYYYY'), $6, (SELECT id_contact FROM sms.contact WHERE ds_contact_email = $7));",
-                                                request["name"].asString(),
-                                                request["lastname"].asString(),
-                                                request["login"].asString(),
-                                                request["profilename"].asString(),
-                                                request["birthdate"].asString(),
-                                                request["idsms"].asString(),
-                                                request["email"].asString());
-                response = "Customer criado com sucesso!";
-            }
-        }
-        catch (const drogon::orm::DrogonDbException &e)
-        {
-            LOG_DEBUG << "catch:" << e.base().what();
-            response = "Erro ao atualizar, verifique os logs do servidor!";
-        }
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = 0;
     }
+
+    LOG_DEBUG;
     temp["response"] = response;
     return temp;
 }
@@ -127,8 +117,7 @@ Json::Value SmsDAO::getUsers()
                                         "ds_contact_email, "
                                         "ds_contact_phone1, "
                                         "ds_contact_phone2 "
-                                        "FROM sms.customer, sms.contact "
-                                        "where fk_contact = id_contact;");
+                                        "FROM sms.customer ");
         //LOG_DEBUG;
         int i = 0;
         std::string count;
@@ -185,8 +174,8 @@ Json::Value SmsDAO::getUserById(std::string &id)
                                         "ds_contact_email, "
                                         "ds_contact_phone1, "
                                         "ds_contact_phone2 "
-                                        "FROM sms.customer, sms.contact "
-                                        "WHERE fk_contact = id_contact AND CAST(id_customer AS CHAR(10)) = $1;",
+                                        "FROM sms.customer "
+                                        "WHERE CAST(id_customer AS CHAR(10)) = $1;",
                                         id);
         //LOG_DEBUG;
         int i = 0;
@@ -245,8 +234,8 @@ Json::Value SmsDAO::getUserByMotvId(std::string &id)
                                         "ds_contact_phone1, "
                                         "ds_contact_phone2, "
                                         "ds_customer_sms_pair_id "
-                                        "FROM sms.customer, sms.contact "
-                                        "WHERE fk_contact = id_contact AND CAST(ds_customer_sms_pair_id AS CHAR(10)) = $1;",
+                                        "FROM sms.customer "
+                                        "WHERE CAST(ds_customer_sms_pair_id AS CHAR(10)) = $1;",
                                         id);
         //LOG_DEBUG;
         int i = 0;
@@ -300,9 +289,9 @@ Json::Value SmsDAO::searchUsers(Json::Value &request)
                                         "ds_contact_email, "
                                         "ds_contact_phone1, "
                                         "ds_contact_phone2 "
-                                        "FROM sms.customer, sms.contact WHERE (ds_customer_name ilike '%"+request["search"].asString()+"%' "
+                                        "FROM sms.customer WHERE ds_customer_name ilike '%"+request["search"].asString()+"%' "
                                         "or ds_customer_lastname ilike '%"+request["search"].asString()+"%' "
-                                        "or ds_customer_profile_name ilike '%"+request["search"].asString()+"%') AND fK_contact = id_contact ;");
+                                        "or ds_customer_profile_name ilike '%"+request["search"].asString()+"%';");
         
          //LOG_DEBUG;
         int i = 0;

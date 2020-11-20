@@ -51,6 +51,7 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     callback(resp);    
 }
 
+// --- integrated --
 void Sms::searchUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -92,56 +93,14 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
         dataJ["data"]=searchJ;
 
         LOG_DEBUG;
-        response = smsCall(url, path, user_token, secret, dataJ); 
+        temp = smsCall(url, path, user_token, secret, dataJ); 
 
-        integratedSearch(response);
-
-        //std::cout << response << "\n";
+        response = integratedSearch(temp);
     }
-    auto resp=HttpResponse::newHttpJsonResponse(temp);
-    callback(resp);    
-}
-
-void Sms::UpdateSMS(const HttpRequestPtr &req,
-                            std::function<void (const HttpResponsePtr &)> &&callback)const
-{
-    LOG_DEBUG ;
-	Urls urls;
-
-	Json::Value json, temp, response, request;
-    std::string tempVendor, path, secret, user_token, url;	
-    Json::Reader reader; 
-    
-    reader.parse(std::string{req->getBody()}, json);
-    temp = json;
-    
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"]= "Não Há informações no body";
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
-    {
-        response["WrongData"] = json;
-        response["response"] = "Algum campo vazio!";
-    }
-    else
-    {
-        tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
-
-        path = urls.updateUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
-        request["data"] = json["data"]; 
-        
-        response = smsCall(url, path, user_token, secret, request);
-    }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
+
 
 void Sms::createSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
@@ -173,6 +132,55 @@ void Sms::createSMS(const HttpRequestPtr &req,
         temp = getCredentials(tempVendor);
 
         path = urls.createUser;
+        url = temp["url"].asString();
+        secret = temp["token"].asString();
+        user_token = temp["user"].asString();
+        request["data"] = json["data"]; 
+        
+        //response = smsCall(url, path, user_token, secret, request);
+
+        /* if(response["status"].asInt() == 1)
+        { */
+            response = integratedCreate(json["data"]);
+            LOG_DEBUG;
+        // }
+        
+    }  
+    auto resp=HttpResponse::newHttpJsonResponse(response);
+    callback(resp);    
+}
+
+
+void Sms::UpdateSMS(const HttpRequestPtr &req,
+                            std::function<void (const HttpResponsePtr &)> &&callback)const
+{
+    LOG_DEBUG ;
+	Urls urls;
+
+	Json::Value json, temp, response, request;
+    std::string tempVendor, path, secret, user_token, url;	
+    Json::Reader reader; 
+    
+    reader.parse(std::string{req->getBody()}, json);
+    temp = json;
+    
+ //-------------------verification for empty body---------------------
+    if(req->getBody() == ""||req->getBody()=="undefined")
+    {
+        response["response"]= "Não Há informações no body";
+    }
+ //-------------------verification for empty fields---------------------
+    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+    {
+        response["WrongData"] = json;
+        response["response"] = "Algum campo vazio!";
+    }
+    else
+    {
+        tempVendor = json["vendor"].asString();
+        temp = getCredentials(tempVendor);
+
+        path = urls.updateUser;
         url = temp["url"].asString();
         secret = temp["token"].asString();
         user_token = temp["user"].asString();
@@ -462,15 +470,13 @@ Json::Value smsCall(std::string &url,
     else
     {        
         reader.parse(std::string{a.second->getBody()}, response);
-        LOG_DEBUG << "End";
+        //LOG_DEBUG << "End";
     }
     return response;
 }
 
 Json::Value integratedSearch(Json::Value searchResult)
 {
-    Json::Value temp;
-
     if(searchResult["status"].asInt() == 1)
     {
         SmsDAO dao;
@@ -507,13 +513,31 @@ Json::Value integratedSearch(Json::Value searchResult)
             //std::cout << returnResult << "\n";
         }
         LOG_DEBUG ;
-        std::cout << returnResult;
+        //std::cout << returnResult;
         return returnResult;
     }
     else
     {
         LOG_DEBUG ;
-        std::cout << searchResult;
+        //std::cout << searchResult;
         return searchResult;
     }
 }
+
+Json::Value integratedCreate(Json::Value user)
+{
+    SmsDAO dao;
+    Json::Value response = dao.saveUser(user);
+    LOG_DEBUG;
+    if(response["response"].asInt())
+    {
+        response["response"] = "Criado com sucesso!";
+    }
+    else
+    {
+        response["response"] = "Erro ao criar, contate suporte!";
+    }
+
+    return response;
+}
+

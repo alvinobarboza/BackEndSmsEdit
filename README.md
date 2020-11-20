@@ -10,7 +10,6 @@ CREATE SCHEMA sms;
 
 CREATE SEQUENCE sms.seq_user;
 CREATE SEQUENCE sms.seq_vendor;
-CREATE SEQUENCE sms.seq_contact;
 CREATE SEQUENCE sms.seq_customer;
 
 CREATE TABLE sms.vendor (
@@ -32,14 +31,6 @@ CREATE TABLE sms."user" (
     PRIMARY KEY (id_user)
 );
 
-CREATE TABLE sms.contact (
-    id_contact bigint DEFAULT nextval('sms.seq_contact'::regclass) NOT NULL,
-    ds_contact_email character varying(150),
-    ds_contact_phone1 character varying(150),
-	ds_contact_phone2 character varying(150),    
-    PRIMARY KEY(id_contact)
-);
-
 CREATE TABLE sms.customer (
     id_customer bigint DEFAULT nextval('sms.seq_customer'::regclass) NOT NULL,
     ds_customer_name character varying(50) NOT NULL,
@@ -48,7 +39,9 @@ CREATE TABLE sms.customer (
     ds_customer_profile_name character varying(50) NOT NULL,
 	ds_customer_sms_pair_id character varying(10),
     dt_customer_birthdate date NOT NULL,
-	fk_contact BIGINT NOT NULL REFERENCES sms.contact(id_contact),
-    PRIMARY KEY (id_customer)    
+    ds_contact_email character varying(150),
+    ds_contact_phone1 character varying(150),
+	ds_contact_phone2 character varying(150),
+	PRIMARY KEY (id_customer)    
 );
 ```

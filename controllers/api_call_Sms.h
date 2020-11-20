@@ -56,6 +56,8 @@ Json::Value smsCall(std::string &url,
                     Json::Value &body);
 
 Json::Value integratedSearch(Json::Value searchResult);
+Json::Value integratedCreate(Json::Value searchResult);
+Json::Value integratedUpdate(Json::Value searchResult);
 
 struct Urls
 {
