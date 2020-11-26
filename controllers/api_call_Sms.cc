@@ -11,7 +11,7 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
 
     Json::Value json, temp, response, request;
     Json::Reader reader; 
-    std::string tempVendor, path, secret, user_token, url;
+    std::string tempVendor, path;
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
@@ -31,20 +31,18 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     else 
     {  //-------------------verification if url match existing url on database---------------------
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
         path = urls.getUSer;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         std::string id = json["id"].asString();
         reader.parse("{\"data\":{\"viewers_id\":"+id+"}}", request);
 
-        response = smsCall(url, path, user_token, secret, request); 
+        response = smsCall(pair, path, request); 
 
         if(response["status"].asInt() == 1)
         {
-            SmsDAO dao;
-            response = dao.getUserByMotvId(id);
+            std::string id = response["response"]["viewers_id"].asString();
+            response = integratedUser(response, id);
         }
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
@@ -58,8 +56,8 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     LOG_DEBUG ;
     Urls urls;
 
-	std::string tempVendor, path, secret, user_token, url;   
-    Json::Value response, dataJ, searchJ, wild_search, search, temp, request;
+	std::string tempVendor, path;   
+    Json::Value response, dataJ, searchJ, wild_search, search, temp;
     Json::Reader reader; 
 
     reader.parse(std::string{req->getBody()}, search);
@@ -81,19 +79,14 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     else
     {   
         tempVendor = search["vendor"].asString();
-        temp = getCredentials(tempVendor);
-        
+        auto pair = getCredentials(tempVendor);      
         path = urls.wildSearch;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
-        
+                
         wild_search["wild_search"] = search["search"];
         searchJ["search"] = wild_search;
         dataJ["data"]=searchJ;
 
-        LOG_DEBUG;
-        temp = smsCall(url, path, user_token, secret, dataJ); 
+        temp = smsCall(pair, path, dataJ); 
 
         response = integratedSearch(temp);
     }
@@ -101,7 +94,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     callback(resp);    
 }
 
-
+// --- integrated --
 void Sms::createSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -109,7 +102,7 @@ void Sms::createSMS(const HttpRequestPtr &req,
 	Urls urls;
 
 	Json::Value json, temp, response, request;
-    std::string tempVendor, path, secret, user_token, url;	
+    std::string tempVendor, path;	
     Json::Reader reader; 
     
     reader.parse(std::string{req->getBody()}, json);
@@ -129,28 +122,24 @@ void Sms::createSMS(const HttpRequestPtr &req,
     else
     {
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
+        path = urls.createUser;        
+        request["data"] = json["data"];         
+        response = smsCall(pair, path, request);
 
-        path = urls.createUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
-        request["data"] = json["data"]; 
-        
-        //response = smsCall(url, path, user_token, secret, request);
-
-        /* if(response["status"].asInt() == 1)
-        { */
-            response = integratedCreate(json["data"]);
+        if(response["status"].asInt() == 1)
+        {
+            int id = response["response"].asInt();
+            response = integratedCreate(json["data"], id);
             LOG_DEBUG;
-        // }
-        
+        }
+        LOG_DEBUG;        
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
 
-
+// --- integrated --
 void Sms::UpdateSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -158,7 +147,7 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
 	Urls urls;
 
 	Json::Value json, temp, response, request;
-    std::string tempVendor, path, secret, user_token, url;	
+    std::string tempVendor, path;	
     Json::Reader reader; 
     
     reader.parse(std::string{req->getBody()}, json);
@@ -178,15 +167,18 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
     else
     {
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
-
-        path = urls.updateUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        auto pair = getCredentials(tempVendor);
+        path = urls.updateUser;        
         request["data"] = json["data"]; 
         
-        response = smsCall(url, path, user_token, secret, request);
+        response = smsCall(pair, path, request);
+
+        if(response["status"].asInt() == 1)
+        {
+            int id = response["response"].asInt();
+            response = integratedUpdate(json["data"], id);
+            LOG_DEBUG;
+        }
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
@@ -200,7 +192,7 @@ void Sms::subscribeSMS(const HttpRequestPtr &req,
     Json::Reader reader;
     Urls urls;
 
-    std::string tempVendor, path, secret, user_token, url;
+    std::string tempVendor, path;
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
@@ -221,15 +213,13 @@ void Sms::subscribeSMS(const HttpRequestPtr &req,
     else 
     {  //-------------------verification if url match existing url on database---------------------
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
         path = urls.subscribeUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
                         ", \"products_id\":"+json["id_product"].asString()+"}}", request);
 
-        response = smsCall(url, path, user_token, secret, request);         
+        response = smsCall(pair, path, request);         
     }  
 
     auto resp=HttpResponse::newHttpJsonResponse(response);
@@ -244,7 +234,7 @@ void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
     Json::Reader reader;
     Urls urls;
 
-    std::string tempVendor, path, secret, user_token, url;
+    std::string tempVendor, path;
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
@@ -265,15 +255,13 @@ void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
     else 
     {  //-------------------verification if url match existing url on database---------------------
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
         path = urls.cancelUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
                         ", \"products_id\":"+json["id_product"].asString()+"}}", request);
 
-        response = smsCall(url, path, user_token, secret, request);         
+        response = smsCall(pair, path, request);         
     }  
 
     auto resp=HttpResponse::newHttpJsonResponse(response);
@@ -288,7 +276,7 @@ void Sms::getAllowedProductsSMS(const HttpRequestPtr &req,
 
     Json::Value json, temp, response, request;
     Json::Reader reader; 
-    std::string tempVendor, path, secret, user_token, url;
+    std::string tempVendor, path;
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
@@ -308,14 +296,12 @@ void Sms::getAllowedProductsSMS(const HttpRequestPtr &req,
     else 
     {  //-------------------verification if url match existing url on database---------------------
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
         path = urls.getAllowedProductUser;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
 
-        response = smsCall(url, path, user_token, secret, request);         
+        response = smsCall(pair, path, request);         
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
@@ -329,7 +315,7 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
 
     Json::Value json, temp, response, request;
     Json::Reader reader; 
-    std::string tempVendor, path, secret, user_token, url;
+    std::string tempVendor, path;
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
@@ -349,14 +335,12 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
     else 
     {  //-------------------verification if url match existing url on database---------------------
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
         path = urls.getSubscriptionInfo;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
 
-        response = smsCall(url, path, user_token, secret, request);         
+        response = smsCall(pair, path, request);         
     }  
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
@@ -369,7 +353,7 @@ void Sms::getPortalAvailable(const HttpRequestPtr &req,
 	Urls urls;
 
 	Json::Value json, temp, response, request;
-    std::string tempVendor, path, secret, user_token, url;	
+    std::string tempVendor, path;	
     Json::Reader reader; 
     
     reader.parse(std::string{req->getBody()}, json);
@@ -389,35 +373,34 @@ void Sms::getPortalAvailable(const HttpRequestPtr &req,
     else
     {
         tempVendor = json["vendor"].asString();
-        temp = getCredentials(tempVendor);
+        auto pair = getCredentials(tempVendor);
 
         path = urls.getPortalAvailable;
-        url = temp["url"].asString();
-        secret = temp["token"].asString();
-        user_token = temp["user"].asString();
+        
         reader.parse("{\"data\":{}}", request); 
         
-        response = smsCall(url, path, user_token, secret, request);
+        response = smsCall(pair, path, request);
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
 
-Json::Value getCredentials(std::string &vendor)
+std::pair<std::string, std::string> getCredentials(std::string &vendor)
 {
+    time_t t = time(0);
     Json::Value obj;
+    std::string user, secret, url;
+    std::pair<std::string, std::string> credentials;
     auto clientPtr = drogon::app().getDbClient();
     try
     {
         auto r = clientPtr->execSqlSync("SELECT * FROM sms.vendor WHERE upper(ds_vendor_name) = upper($1);", vendor);
         
-        int i = 0;
         for (auto const &row : r)
         {
-            obj["user"] = row["ds_vendor_user_token"].as<std::string>();
-            obj["token"] = row["ds_vendor_token"].as<std::string>();
-            obj["url"] = row["ds_vendor_url"].as<std::string>();
-            i++;
+            user = row["ds_vendor_user_token"].as<std::string>();
+            secret = row["ds_vendor_token"].as<std::string>();
+            url = row["ds_vendor_url"].as<std::string>();
         }                  
     }
     catch (const drogon::orm::DrogonDbException &e)
@@ -425,39 +408,39 @@ Json::Value getCredentials(std::string &vendor)
         LOG_DEBUG << "catch:" << e.base().what();
         obj["erro"] = "Erro ao listar, verifique os logs do servidor!";
     }
-    return obj;
+
+    std::string sTime = std::to_string(t);
+    std::string sha =  sha1(sTime+user+secret);
+    std::string token = user+":"+sTime+":"+sha;
+    std::cout << user+":"+sTime+":"+sha << std::endl;
+
+    credentials.first = token;
+    credentials.second = url;
+
+    return credentials;
 }
 
-Json::Value smsCall(std::string &url, 
-                    std::string &path, 
-                    std::string &user_token, 
-                    std::string &secret, 
+Json::Value smsCall(std::pair<std::string, std::string> &credendials,
+                    std::string &path,                      
                     Json::Value &body)
 {
-    time_t t = time(0);
     Json::Value response;
 
-    if (url == "")
+    if (credendials.second == "")
     {
         response["response"] = "Url vazia";
         LOG_DEBUG << "End";
         return response;
     }    
-
-    Json::Reader reader;
-    std::string sTime = std::to_string(t);
-    std::string token =  sha1(sTime+user_token+secret);
-
-    std::cout << user_token+":"+sTime+":"+token << std::endl;
-   
-    auto client = HttpClient::newHttpClient("https://"+url);
+    
+    auto client = HttpClient::newHttpClient("https://"+credendials.second);
     auto requestH = HttpRequest::newHttpRequest();
     //LOG_DEBUG;
     requestH->setMethod(drogon::Post);
     requestH->setPath(path);
-    requestH->addHeader("Authorization",user_token+":"+sTime+":"+token);
+    requestH->addHeader("Authorization",credendials.first);
     requestH->setBody(body.toStyledString());
-    LOG_DEBUG << body.toStyledString();
+    //LOG_DEBUG << body.toStyledString();
     auto a = client->sendRequest(requestH, 1);
     //LOG_DEBUG ;
 
@@ -468,29 +451,30 @@ Json::Value smsCall(std::string &url,
         response["response"] = "Problemas durante comunicação até servidor MOTV";
     }
     else
-    {        
+    {   
+        Json::Reader reader;     
         reader.parse(std::string{a.second->getBody()}, response);
         //LOG_DEBUG << "End";
     }
     return response;
 }
 
-Json::Value integratedSearch(Json::Value searchResult)
+Json::Value integratedSearch(Json::Value &searchResult)
 {
     if(searchResult["status"].asInt() == 1)
     {
         SmsDAO dao;
         std::string id;
         Json::Value returnResult, unit;
-        LOG_DEBUG << searchResult["status"].asString();
+        //LOG_DEBUG << searchResult["status"].asString();
         for (Json::Value &user : searchResult["response"])
         {            
             id = user["viewers_id"].asString();
             Json::Value temp = dao.getUserByMotvId(id);
-            LOG_DEBUG ;
+            //LOG_DEBUG ;
             if(temp["0"].empty())
             {
-                LOG_DEBUG ;
+                //LOG_DEBUG ;
                 unit["userid"]      = "";
                 unit["userSMSid"]   = id;
                 unit["profilename"] = user["devices"][0]["motv_portals_name"];
@@ -507,13 +491,9 @@ Json::Value integratedSearch(Json::Value searchResult)
             else
             {
                 returnResult[id] = temp["0"];
-                LOG_DEBUG ;
+                //LOG_DEBUG ;
             }
-                        
-            //std::cout << returnResult << "\n";
-        }
-        LOG_DEBUG ;
-        //std::cout << returnResult;
+        }        
         return returnResult;
     }
     else
@@ -524,9 +504,10 @@ Json::Value integratedSearch(Json::Value searchResult)
     }
 }
 
-Json::Value integratedCreate(Json::Value user)
+Json::Value integratedCreate(Json::Value &user, int & id)
 {
     SmsDAO dao;
+    user["smsID"] = id;
     Json::Value response = dao.saveUser(user);
     LOG_DEBUG;
     if(response["response"].asInt())
@@ -538,6 +519,50 @@ Json::Value integratedCreate(Json::Value user)
         response["response"] = "Erro ao criar, contate suporte!";
     }
 
+    return response;
+}
+
+Json::Value integratedUpdate(Json::Value &user, int & id)
+{
+    SmsDAO dao;
+    user["smsID"] = id;
+    Json::Value response = dao.updateUser(user);
+    
+    if(response["response"].asInt())
+    {
+        response["response"] = "Atualizado com sucesso!";
+    }
+    else
+    {
+        response["response"] = "Erro ao criar, contate suporte!";
+    }
+    return response;
+}
+
+Json::Value integratedUser(Json::Value &user, std::string & id)
+{
+    SmsDAO dao;
+    Json::Value response, temp;
+    temp = dao.getUserByMotvId(id);
+
+    if(temp["0"].empty())
+    {
+        response["userid"]      = "";
+        response["userSMSid"]   = id;
+        response["profilename"] = user["response"]["devices"][0]["motv_portals_name"];
+        response["name"]        = user["response"]["viewers_firstname"];
+        response["lastname"]    = user["response"]["viewers_lastname"];
+        response["login"]       = user["response"]["devices"][0]["device_motv_login"];
+        response["birthdate"]   = "";
+        response["email"]       = "";
+        response["tel1"]        = "";
+        response["tel2"]        = "";
+
+    }
+    else
+    {
+        response = temp;
+    }
     return response;
 }
 

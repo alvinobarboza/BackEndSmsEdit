@@ -10,23 +10,28 @@ Json::Value SmsDAO::saveUser(Json::Value &request)
     auto clientPtr = drogon::app().getDbClient();
     try
     {
-        
-       
-        auto r = clientPtr->execSqlSync("INSERT INTO sms.customer(ds_customer_name, ds_customer_lastname, ds_customer_login, ds_customer_profile_name, dt_customer_birthdate, ds_customer_sms_pair_id, ds_contact_email, ds_contact_phone1, ds_contact_phone2, ds_customer_sms_pair_id) "
-                                        "VALUES ($1, $2, $3, $4, to_date($5, 'DDMMYYYY'), $6, $7, $8, $9, $10);",
+        auto r = clientPtr->execSqlSync("INSERT INTO sms.customer("
+                                        "ds_customer_name, "
+                                        "ds_customer_lastname, "
+                                        "ds_customer_login, "
+                                        "ds_customer_profile_name, "
+                                        "dt_customer_birthdate, "
+                                        "ds_customer_sms_pair_id, "
+                                        "ds_contact_email, "
+                                        "ds_contact_phone1, "
+                                        "ds_contact_phone2) "
+                                        "VALUES ($1, $2, $3, $4, to_date($5, 'DDMMYYYY'), $6, $7, $8, $9);",
                                         request["name"].asString(),
                                         request["lastname"].asString(),
                                         request["login"].asString(),
                                         request["profilename"].asString(),
                                         request["birthdate"].asString(),
-                                        request["idsms"].asString(),                                            
+                                        request["smsID"].asString(),                                            
                                         request["email"].asString(),
                                         request["tel1"].asString(),
-                                        request["tel2"].asString()
-                                        request["smsID"].asString());
+                                        request["tel2"].asString());
         response = 1;
-        LOG_DEBUG;
-       
+        LOG_DEBUG;       
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
@@ -42,58 +47,38 @@ Json::Value SmsDAO::saveUser(Json::Value &request)
 Json::Value SmsDAO::updateUser(Json::Value &request)
 {
     LOG_DEBUG;
-    std::string response;
+    int response;
     Json::Value temp; 
     
-    if(isEmpty(request))
+    auto clientPtr = drogon::app().getDbClient();
+    try        
     {
-        temp["response"] = "Algum campo vazio";
-        temp["requestSent"] = request;
-        return temp;
+        auto r = clientPtr->execSqlSync("UPDATE sms.customer SET "
+                                        "ds_customer_name = CASE WHEN $1 = '' THEN ds_customer_name ELSE $1 END, "
+                                        "ds_customer_lastname = CASE WHEN $2 = '' THEN ds_customer_lastname ELSE $2 END, "
+                                        "ds_customer_login = CASE WHEN $3 = '' THEN ds_customer_login ELSE $3 END, "
+                                        "ds_customer_profile_name = CASE WHEN $4 = '' THEN ds_customer_profile_name ELSE $4 END, "
+                                        "dt_customer_birthdate = CASE WHEN $5 = '' THEN dt_customer_birthdate ELSE to_date($5, 'DDMMYYYY') END, "
+                                        "ds_contact_email = CASE WHEN $6 = '' THEN ds_contact_email ELSE $6 END, "
+                                        "ds_contact_phone1 = CASE WHEN $7 = '' THEN ds_contact_phone1 ELSE $7 END, "
+                                        "ds_contact_phone2 = CASE WHEN $8 = '' THEN ds_contact_phone2 ELSE $8 END "
+                                        "WHERE CAST(ds_customer_sms_pair_id AS CHAR(10)) = $9;",
+                                        request["name"].asString(),
+                                        request["lastname"].asString(),
+                                        request["login"].asString(),
+                                        request["profilename"].asString(),
+                                        request["birthdate"].asString(),
+                                        request["email"].asString(),
+                                        request["tel1"].asString(),
+                                        request["tel2"].asString(),
+                                        request["smsID"].asString());
+        response = 1; 
     }
-    else
+    catch (const drogon::orm::DrogonDbException &e)
     {
-        auto clientPtr = drogon::app().getDbClient();
-        try
-        {
-
-            auto r = clientPtr->execSqlSync("UPDATE sms.customer SET "
-                                            "ds_customer_name = CASE WHEN $2 = '' THEN ds_customer_name ELSE $2 END, "
-                                            "ds_customer_lastname = CASE WHEN $3 = '' THEN ds_customer_lastname ELSE $3 END, "
-                                            "ds_customer_login = CASE WHEN $4 = '' THEN ds_customer_login ELSE $4 END, "
-                                            "ds_customer_profile_name = CASE WHEN $5 = '' THEN ds_customer_profile_name ELSE $5 END, "
-                                            "dt_customer_birthdate = CASE WHEN $6 = '' THEN dt_customer_birthdate ELSE to_date($6, 'DDMMYYYY') END "
-                                            "WHERE CAST(id_customer AS CHAR(10)) = $1;",
-                                            request["id"].asString(),
-                                            request["name"].asString(),
-                                            request["lastname"].asString(),
-                                            request["login"].asString(),
-                                            request["profilename"].asString(),
-                                            request["birthdate"].asString());
-            response = "Customer atualizado com sucesso!";
-
-            //Begin----------------------save contacts---------------------------
-            std::cout << r.affectedRows() << std::endl;
-            if(r.affectedRows() > 0)
-            {                
-                auto r1 = clientPtr->execSqlSync("UPDATE sms.contact SET "
-                                                "ds_contact_email = CASE WHEN $1 = '' THEN ds_contact_email ELSE $1 END, "
-                                                "ds_contact_phone1 = CASE WHEN $2 = '' THEN ds_contact_phone1 ELSE $1 END, "
-                                                "ds_contact_phone2 = CASE WHEN $3 = '' THEN ds_contact_phone2 ELSE $1 END "
-                                                "WHERE id_contact = (SELECT fk_contact FROM sms.customer WHERE CAST(id_customer AS CHAR(10)) = $4);",
-                                                request["email"].asString(),
-                                                request["tel1"].asString(),
-                                                request["tel2"].asString(),
-                                                request["id"].asString());
-            }
-            //End----------------------------------------------------------------
-        }
-        catch (const drogon::orm::DrogonDbException &e)
-        {
-            LOG_DEBUG << "catch:" << e.base().what();
-            response = "Erro ao atualizar, verifique os logs do servidor!";
-        }
-    }
+        LOG_DEBUG << "catch:" << e.base().what();
+        response = 0;
+    }    
     temp["response"] = response;
     return temp;
 }
@@ -328,18 +313,4 @@ Json::Value SmsDAO::searchUsers(Json::Value &request)
     temp["response"] = response;
 
     return temp;
-}
-
-bool isEmpty(Json::Value &value)
-{
-    bool validation = false;
-    if(value["name"].asString() == ""|| 
-        value["lastname"].asString() == ""|| 
-        value["login"].asString() == ""||
-        value["profilename"].asString() == ""||
-        value["birthdate"].asString() == "")
-        {
-            validation = true;
-        }
-    return validation;
 }

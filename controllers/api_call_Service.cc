@@ -254,13 +254,14 @@ void Service::tests(const HttpRequestPtr &req,
 
     time_t t = time(0);
     std::string sTime = std::to_string(t);
-    std::string user_token = "youcast.api";
+    std::string user_token = "alvino.barboza@youcast.tv.br";
     // sms 
 
     if(temp["type"].asString() == "sms")
     {
-        secret = "rv2o43o4nltwx29klnc4zcm45zvi9wmfi2o1bbat";
-    }else
+        secret = "cm3yaca6xr37xp5d0b10vw6d8yhcwd9zk1b7o0be";
+    }
+    else
     {
         secret = "k0wzh85hamcogic5inn1tjsjkcxeosmrggrd6bju";
     }
@@ -269,7 +270,12 @@ void Service::tests(const HttpRequestPtr &req,
 
     std::string token =  sha1(sTime+user_token+secret);
 
+    response["antes"] = temp;
     response["sms"] = user_token+":"+sTime+":"+token;
+
+    temp = response;
+
+    response["depois"] = temp;
         
     // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);

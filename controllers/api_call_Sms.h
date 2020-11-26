@@ -48,16 +48,16 @@ namespace api
     };
   }
 }
-Json::Value getCredentials(std::string &vendor);
-Json::Value smsCall(std::string &url, 
-                    std::string &path, 
-                    std::string &user_token, 
-                    std::string &secret, 
+std::pair<std::string, std::string> getCredentials(std::string &vendor);
+Json::Value smsCall(std::pair<std::string, std::string> &credendials,
+                    std::string &path,                      
                     Json::Value &body);
 
-Json::Value integratedSearch(Json::Value searchResult);
-Json::Value integratedCreate(Json::Value searchResult);
-Json::Value integratedUpdate(Json::Value searchResult);
+Json::Value integratedSearch(Json::Value &searchResult);
+Json::Value integratedCreate(Json::Value &user, int & id);
+Json::Value integratedUpdate(Json::Value &user, int & id);
+Json::Value integratedUser(Json::Value &user, std::string & id);
+Json::Value integratedUpdate(Json::Value &searchResult);
 
 struct Urls
 {
