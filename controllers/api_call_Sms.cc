@@ -1,7 +1,6 @@
 #include "api_call_Sms.h"
 using namespace api::call;
 
-
 // --- integrated --
 void Sms::getUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback) const
@@ -90,6 +89,7 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
 
         response = integratedSearch(temp);
     }
+    //LOG_DEBUG << response.toStyledString();
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
@@ -461,45 +461,56 @@ Json::Value smsCall(std::pair<std::string, std::string> &credendials,
 
 Json::Value integratedSearch(Json::Value &searchResult)
 {
+    LOG_DEBUG;
     if(searchResult["status"].asInt() == 1)
     {
         SmsDAO dao;
         std::string id;
         Json::Value returnResult, unit;
-        //LOG_DEBUG << searchResult["status"].asString();
-        for (Json::Value &user : searchResult["response"])
-        {            
-            id = user["viewers_id"].asString();
-            Json::Value temp = dao.getUserByMotvId(id);
-            //LOG_DEBUG ;
-            if(temp["0"].empty())
-            {
-                //LOG_DEBUG ;
-                unit["userid"]      = "";
-                unit["userSMSid"]   = id;
-                unit["profilename"] = user["devices"][0]["motv_portals_name"];
-                unit["name"]        = user["viewers_firstname"];
-                unit["lastname"]    = user["viewers_lastname"];
-                unit["login"]       = user["devices"][0]["device_motv_login"];
-                unit["birthdate"]   = "";
-                unit["email"]       = "";
-                unit["tel1"]        = "";
-                unit["tel2"]        = "";
+        int verification = searchResult["response"].size();
 
-                returnResult[id] = unit;
+        if(verification)
+        {
+            for (Json::Value &user : searchResult["response"])
+            {            
+                id = user["viewers_id"].asString();
+                Json::Value temp = dao.getUserByMotvId(id);
+                // LOG_DEBUG ;
+                if(temp["0"].empty())
+                {
+                    // LOG_DEBUG ;
+                    unit["userid"]      = "";
+                    unit["userSMSid"]   = id;
+                    unit["profilename"] = user["devices"][0]["motv_portals_name"];
+                    unit["name"]        = user["viewers_firstname"];
+                    unit["lastname"]    = user["viewers_lastname"];
+                    unit["login"]       = user["devices"][0]["device_motv_login"];
+                    unit["birthdate"]   = "";
+                    unit["email"]       = "";
+                    unit["tel1"]        = "";
+                    unit["tel2"]        = "";
+
+                    returnResult[id] = unit;
+                }
+                else
+                {
+                    returnResult[id] = temp["0"];
+                    // LOG_DEBUG ;
+                }
             }
-            else
-            {
-                returnResult[id] = temp["0"];
-                //LOG_DEBUG ;
-            }
-        }        
+            returnResult["searchStatus"] = 1;
+        }
+        else
+        {
+            returnResult["searchStatus"] = 0;
+        }
+        
         return returnResult;
     }
     else
     {
-        LOG_DEBUG ;
-        //std::cout << searchResult;
+        // LOG_DEBUG ;
+        std::cout << searchResult;
         return searchResult;
     }
 }
@@ -518,7 +529,6 @@ Json::Value integratedCreate(Json::Value &user, int & id)
     {
         response["response"] = "Erro ao criar, contate suporte!";
     }
-
     return response;
 }
 
