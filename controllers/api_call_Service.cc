@@ -261,9 +261,13 @@ void Service::tests(const HttpRequestPtr &req,
     {
         secret = "cm3yaca6xr37xp5d0b10vw6d8yhcwd9zk1b7o0be";
     }
+    else if( temp["type"].asString() == "tvn")
+    {
+        secret = "q2r4lgtefdz7t3obtyxw2h5crgfi877xtcbkuizo";
+    }
     else
     {
-        secret = "k0wzh85hamcogic5inn1tjsjkcxeosmrggrd6bju";
+        secret = "crzahutejhdwbxxf8n79g9t9ugr4dyt0sh8zxwnk";
     }
 
     // mw
