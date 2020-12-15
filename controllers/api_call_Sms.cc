@@ -16,14 +16,15 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
 //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
 //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
             temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
     {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
+        response["response"] = json;
+        response["status"] = 0;
     }
     else 
     {  //-------------------verification if url match existing url on database---------------------
@@ -63,14 +64,14 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
 	//-------------------verification for empty body---------------------
     if(req->getBody()==""||req->getBody()=="undefined")
     {
-        response["response"] = "Não Há informações no body";  
+        response["response"] = search;
+        response["status"] = 0;
     }
 	//-------------------verification for empty fields---------------------
     else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
     {
-        response["response"] = "Campo vendor vazio!"; 
-        
-        LOG_DEBUG << "Search SMS" << req->getBody();
+        response["response"] = search;
+        response["status"] = 0;
     }
     else
     {   
@@ -83,15 +84,22 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
         dataJ["data"]=searchJ;
 
         temp = smsCall(pair, path, dataJ); 
-
-        response = integratedSearch(temp);
+        if(temp["status"].asInt() == 1)
+        {
+            response = integratedSearch(temp);
+        }
+        else
+        {
+            response = temp;
+        }
+        
     }
     //LOG_DEBUG << response.toStyledString();
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
 
-// --- integrated --
+// --- integrated - standardized--
 void Sms::createSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -108,13 +116,14 @@ void Sms::createSMS(const HttpRequestPtr &req,
  //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
     {
-        response["WrongData"] = json;
-        response["response"] = "Algum campo vazio!";
+        response["response"] = json;
+        response["status"] = 0;
     }
     else
     {
@@ -128,15 +137,13 @@ void Sms::createSMS(const HttpRequestPtr &req,
         {
             int id = response["response"].asInt();
             response = integratedCreate(json["data"], id);
-            LOG_DEBUG;
         }
-        LOG_DEBUG;        
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
 
-// --- integrated --
+// --- integrated - standardized--
 void Sms::UpdateSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -153,13 +160,14 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
  //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
     {
-        response["WrongData"] = json;
-        response["response"] = "Algum campo vazio!";
+        response["response"] = json;
+        response["status"] = 0;
     }
     else
     {
@@ -196,7 +204,8 @@ void Sms::subscribeSMS(const HttpRequestPtr &req,
     //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
@@ -204,8 +213,8 @@ void Sms::subscribeSMS(const HttpRequestPtr &req,
             temp["id_product"].asString()==""||
             temp["vendor"].asString()=="undefined")
     {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
+        response["response"] = json;
+        response["status"] = 0;
     }
     else 
     {  //-------------------verification if url match existing url on database---------------------
@@ -238,7 +247,8 @@ void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
     //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
@@ -246,8 +256,8 @@ void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
             temp["id_product"].asString()==""||
             temp["vendor"].asString()=="undefined")
     {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
+        response["response"] = json;
+        response["status"] = 0;
     }
     else 
     {  //-------------------verification if url match existing url on database---------------------
@@ -281,14 +291,15 @@ void Sms::getAllowedProductsSMS(const HttpRequestPtr &req,
  //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
             temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
     {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
+        response["response"] = json;
+        response["status"] = 0;
     }
     else 
     {  //-------------------verification if url match existing url on database---------------------
@@ -320,14 +331,15 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
  //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
             temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
     {
-        response["response"] = "Algum campo vazio!";
-        response["WrongData"] = json;
+        response["response"] = json;
+        response["status"] = 0;
     }
     else 
     {  //-------------------verification if url match existing url on database---------------------
@@ -359,13 +371,14 @@ void Sms::getPortalAvailable(const HttpRequestPtr &req,
  //-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
-        response["response"]= "Não Há informações no body";
+        response["response"] = json;
+        response["status"] = 0;
     }
  //-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
     {
-        response["WrongData"] = json;
-        response["response"] = "Algum campo vazio!";
+        response["response"] = json;
+        response["status"] = 0;
     }
     else
     {
@@ -426,6 +439,7 @@ Json::Value smsCall(std::pair<std::string, std::string> &credendials,
     if (credendials.second == "")
     {
         response["response"] = "Url vazia";
+        response["status"] = 0;
         LOG_DEBUG << "End";
         return response;
     }    
@@ -521,13 +535,16 @@ Json::Value integratedCreate(Json::Value &user, int & id)
     LOG_DEBUG;
     if(response["response"].asInt())
     {
-        response["response"] = "Criado com sucesso!";
+        response["response"] = id;
+        response["status"] = 1;
+        return response;
     }
     else
     {
-        response["response"] = "Erro ao criar, contate suporte!";
+        response["response"] = id;
+        response["status"] = 0;
+        return response;
     }
-    return response;
 }
 
 Json::Value integratedUpdate(Json::Value &user, int & id)
@@ -538,13 +555,16 @@ Json::Value integratedUpdate(Json::Value &user, int & id)
     
     if(response["response"].asInt())
     {
-        response["response"] = "Atualizado com sucesso!";
+        response["response"] = id;
+        response["status"] = 1;
+        return response;
     }
     else
     {
-        response["response"] = "Erro ao criar, contate suporte!";
+        response["response"] = id;
+        response["status"] = 0;
+        return response;
     }
-    return response;
 }
 
 void integratedUser(Json::Value &user)
