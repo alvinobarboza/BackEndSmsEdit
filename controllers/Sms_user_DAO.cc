@@ -202,8 +202,8 @@ Json::Value SmsDAO::getUserById(std::string &id)
 Json::Value SmsDAO::getUserByMotvId(std::string &id)
 {
     LOG_DEBUG;
-    Json::Value temp;
-    std::string response;
+    Json::Value temp, obj;
+    int status {0};
 
     auto clientPtr = drogon::app().getDbClient();
     try
@@ -222,36 +222,29 @@ Json::Value SmsDAO::getUserByMotvId(std::string &id)
                                         "FROM sms.customer "
                                         "WHERE CAST(ds_customer_sms_pair_id AS CHAR(10)) = $1;",
                                         id);
-        //LOG_DEBUG;
-        int i = 0;
-        std::string count;
+        //LOG_DEBUG;       
         for (auto const &row : r)
         {
-            Json::Value obj;
-            
-            obj["userid"]               = row["id_customer"].as<std::string>();
-            obj["userSMSid"]            = row["ds_customer_sms_pair_id"].as<std::string>();
-            obj["name"]                 = row["ds_customer_name"].as<std::string>();
-            obj["lastname"]             = row["ds_customer_lastname"].as<std::string>();
-            obj["login"]                = row["ds_customer_login"].as<std::string>();
-            obj["profilename"]          = row["ds_customer_profile_name"].as<std::string>();            
-            obj["birthdate"]            = row["dt_customer_birthdate"].as<std::string>();
-            obj["email"]                = row["ds_contact_email"].as<std::string>();
-            obj["tel1"]                 = row["ds_contact_phone1"].as<std::string>();
-            obj["tel2"]                 = row["ds_contact_phone2"].as<std::string>();
-
-            count = std::to_string(i);
-            temp[count] = obj;
-            i++;
+            LOG_DEBUG; 
+            obj[status]["userid"]               = row["id_customer"].as<std::string>();
+            obj[status]["userSMSid"]            = row["ds_customer_sms_pair_id"].as<std::string>();
+            obj[status]["name"]                 = row["ds_customer_name"].as<std::string>();
+            obj[status]["lastname"]             = row["ds_customer_lastname"].as<std::string>();
+            obj[status]["login"]                = row["ds_customer_login"].as<std::string>();
+            obj[status]["profilename"]          = row["ds_customer_profile_name"].as<std::string>();            
+            obj[status]["birthdate"]            = row["dt_customer_birthdate"].as<std::string>();
+            obj[status]["email"]                = row["ds_contact_email"].as<std::string>();
+            obj[status]["tel1"]                 = row["ds_contact_phone1"].as<std::string>();
+            obj[status]["tel2"]                 = row["ds_contact_phone2"].as<std::string>();                        
+            status++;
         }
-        response = "Usuários listados com sucesso!";        
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
         LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao listar, verifique os logs do servidor!";
     }
-    temp["response"] = response;
+    temp["response"] = obj;
+    temp["status"] = status;
     return temp;
 }
 

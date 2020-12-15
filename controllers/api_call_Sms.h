@@ -56,7 +56,7 @@ Json::Value smsCall(std::pair<std::string, std::string> &credendials,
 Json::Value integratedSearch(Json::Value &searchResult);
 Json::Value integratedCreate(Json::Value &user, int & id);
 Json::Value integratedUpdate(Json::Value &user, int & id);
-Json::Value integratedUser(Json::Value &user, std::string & id);
+void integratedUser(Json::Value &user);
 Json::Value integratedUpdate(Json::Value &searchResult);
 
 struct Urls

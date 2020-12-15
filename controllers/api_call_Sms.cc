@@ -1,7 +1,7 @@
 #include "api_call_Sms.h"
 using namespace api::call;
 
-// --- integrated --
+// --- integrated - standardized--
 void Sms::getUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -11,16 +11,14 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     Json::Value json, temp, response, request;
     Json::Reader reader; 
     std::string tempVendor, path;
-
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
-
- //-------------------verification for empty body---------------------
+//-------------------verification for empty body---------------------
     if(req->getBody() == ""||req->getBody()=="undefined")
     {
         response["response"]= "Não Há informações no body";
     }
- //-------------------verification for empty fields---------------------
+//-------------------verification for empty fields---------------------
     else if(temp["vendor"].asString()==""||
             temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
     {
@@ -32,7 +30,6 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
         tempVendor = json["vendor"].asString();
         auto pair = getCredentials(tempVendor);
         path = urls.getUSer;
-        
         std::string id = json["id"].asString();
         reader.parse("{\"data\":{\"viewers_id\":"+id+"}}", request);
 
@@ -40,15 +37,15 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
 
         if(response["status"].asInt() == 1)
         {
-            std::string id = response["response"]["viewers_id"].asString();
-            response = integratedUser(response, id);
+            LOG_DEBUG;
+            integratedUser(response);
         }
     }  
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
 
-// --- integrated --
+// --- integrated - standardized--
 void Sms::searchUserSMS(const HttpRequestPtr &req,
                             std::function<void (const HttpResponsePtr &)> &&callback)const
 {
@@ -408,7 +405,7 @@ std::pair<std::string, std::string> getCredentials(std::string &vendor)
         LOG_DEBUG << "catch:" << e.base().what();
         obj["erro"] = "Erro ao listar, verifique os logs do servidor!";
     }
-
+    LOG_DEBUG;
     std::string sTime = std::to_string(t);
     std::string sha =  sha1(sTime+user+secret);
     std::string token = user+":"+sTime+":"+sha;
@@ -466,6 +463,7 @@ Json::Value integratedSearch(Json::Value &searchResult)
     {
         SmsDAO dao;
         std::string id;
+        int i {0};
         Json::Value returnResult, unit;
         int verification = searchResult["response"].size();
 
@@ -476,35 +474,35 @@ Json::Value integratedSearch(Json::Value &searchResult)
                 id = user["viewers_id"].asString();
                 Json::Value temp = dao.getUserByMotvId(id);
                 // LOG_DEBUG ;
-                if(temp["0"].empty())
+                if(temp["status"].asInt() == 0)
                 {
                     // LOG_DEBUG ;
-                    unit["userid"]      = "";
-                    unit["userSMSid"]   = id;
-                    unit["profilename"] = user["devices"][0]["motv_portals_name"];
-                    unit["name"]        = user["viewers_firstname"];
-                    unit["lastname"]    = user["viewers_lastname"];
-                    unit["login"]       = user["devices"][0]["device_motv_login"];
-                    unit["birthdate"]   = "";
-                    unit["email"]       = "";
-                    unit["tel1"]        = "";
-                    unit["tel2"]        = "";
+                    unit[i]["userid"]      = "";
+                    unit[i]["userSMSid"]   = id;
+                    unit[i]["profilename"] = user["devices"][0]["motv_portals_name"];
+                    unit[i]["name"]        = user["viewers_firstname"];
+                    unit[i]["lastname"]    = user["viewers_lastname"];
+                    unit[i]["login"]       = user["devices"][0]["device_motv_login"];
+                    unit[i]["birthdate"]   = "";
+                    unit[i]["email"]       = "";
+                    unit[i]["tel1"]        = "";
+                    unit[i]["tel2"]        = "";
 
-                    returnResult[id] = unit;
+                    returnResult["response"] = unit;
+                    i++;
                 }
                 else
                 {
-                    returnResult[id] = temp["0"];
+                    returnResult["response"] = temp["response"];
                     // LOG_DEBUG ;
                 }
-            }
-            returnResult["searchStatus"] = 1;
+            }            
+            returnResult["status"] = 1;
         }
         else
         {
-            returnResult["searchStatus"] = 0;
-        }
-        
+            returnResult = searchResult;
+        }        
         return returnResult;
     }
     else
@@ -549,30 +547,32 @@ Json::Value integratedUpdate(Json::Value &user, int & id)
     return response;
 }
 
-Json::Value integratedUser(Json::Value &user, std::string & id)
+void integratedUser(Json::Value &user)
 {
+    LOG_DEBUG;
     SmsDAO dao;
     Json::Value response, temp;
+    std::string id = user["response"]["viewers_id"].asString();
     temp = dao.getUserByMotvId(id);
-
-    if(temp["0"].empty())
-    {
-        response["userid"]      = "";
-        response["userSMSid"]   = id;
-        response["profilename"] = user["response"]["devices"][0]["motv_portals_name"];
-        response["name"]        = user["response"]["viewers_firstname"];
-        response["lastname"]    = user["response"]["viewers_lastname"];
-        response["login"]       = user["response"]["devices"][0]["device_motv_login"];
-        response["birthdate"]   = "";
-        response["email"]       = "";
-        response["tel1"]        = "";
-        response["tel2"]        = "";
-
+    
+    if(temp["status"].asInt() == 0)
+    {   
+        response[0]["userid"]      = "";
+        response[0]["userSMSid"]   = user["response"]["viewers_id"].asString();
+        response[0]["profilename"] = user["response"]["devices"][0]["motv_portals_name"];
+        response[0]["name"]        = user["response"]["viewers_firstname"];
+        response[0]["lastname"]    = user["response"]["viewers_lastname"];
+        response[0]["login"]       = user["response"]["devices"][0]["device_motv_login"];
+        response[0]["birthdate"]   = "";
+        response[0]["email"]       = "";
+        response[0]["tel1"]        = "";
+        response[0]["tel2"]        = "";
+        user["response"] = response;
+        user["status"] = 1;
     }
     else
     {
-        response = temp;
+        user = temp;    
     }
-    return response;
 }
 
