@@ -1,4 +1,4 @@
-#include "api_call_Service.h"
+#include "api_call_Service.hpp"
 using namespace api::call;
 
 
@@ -26,7 +26,7 @@ void Service::login(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================save method===============================
+//===============================save method===================================
 void Service::saveUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -50,7 +50,7 @@ void Service::saveUser(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================update method===============================
+//===============================update method=================================
 void Service::updateUser(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -73,7 +73,7 @@ void Service::updateUser(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================delete method===============================
+//===============================delete method=================================
 void Service::deleteUser(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -97,7 +97,7 @@ void Service::deleteUser(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================save vendor method===============================
+//===============================save vendor method============================
 void Service::saveVendor(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -120,7 +120,7 @@ void Service::saveVendor(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================update vendor method===============================
+//===============================update vendor method==========================
 void Service::updateVendor(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -143,7 +143,7 @@ void Service::updateVendor(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================delete vendor method===============================
+//===============================delete vendor method==========================
 void Service::deleteVendor(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -167,7 +167,7 @@ void Service::deleteVendor(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================get all users method===============================
+//===============================get all users method==========================
 void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -181,7 +181,7 @@ void Service::getUsers(const HttpRequestPtr &req,
     callback(resp);
 }
 
-//===============================get all vendors method===============================
+//===============================get all vendors method========================
 void Service::getVendors(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
@@ -243,13 +243,10 @@ void Service::tests(const HttpRequestPtr &req,
     LOG_DEBUG;
     Json::Reader reader;
     Json::Value temp, response;
-    std::vector<std::string> keyNames;
-    SmsDAO dao;
-    std::string id = "3"; 
+    
     reader.parse(std::string{req->getBody()}, temp);
 
-    //response = dao.searchUsers(temp);
-
+    validateRequest(req);
     std::string secret = "";
 
     time_t t = time(0);
@@ -270,17 +267,14 @@ void Service::tests(const HttpRequestPtr &req,
         secret = "crzahutejhdwbxxf8n79g9t9ugr4dyt0sh8zxwnk";
     }
 
-    // mw
-
+    std::string tokenUser {"91a2962738f56e145792a5fedb0f7b0fedff04bf"}, user {"alvino.barboza:"};
+    std::string teste {sha1(user+tokenUser)};
+    
     std::string token =  sha1(sTime+user_token+secret);
 
-    response["antes"] = temp;
+    response["teste"] = teste;
     response["sms"] = user_token+":"+sTime+":"+token;
-
-    temp = response;
-    
-    response["depois"] = temp;
-        
+            
     // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);

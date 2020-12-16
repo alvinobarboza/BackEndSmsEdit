@@ -1,4 +1,4 @@
-#include "SystemDao.h"
+#include "SystemDao.hpp"
 
 Json::Value Dao::login(Json::Value &request)
 {
@@ -15,6 +15,7 @@ Json::Value Dao::login(Json::Value &request)
         {
             temp["vendor"] = row["ds_vendor_name"].as<std::string>();           
             profile = row["ds_user_profile"].as<int>();
+            temp["token"] = row["ds_user_token"].as<std::string>();
             temp["name"] = row["ds_profile_name"].as<std::string>();
             temp["id"] = row["id_user"].as<std::string>();        
         }
@@ -72,13 +73,25 @@ Json::Value Dao::saveUser(Json::Value &request)
             auto clientPtr = drogon::app().getDbClient();
             try
             {
-                auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor, ds_user_profile, ds_profile_name) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)),$4, $5);",
+                time_t t = time(0);
+                std::string sTime {std::to_string(t)};
+                std::string token {sTime+":"+request["username"].asString()};
+
+                auto r = clientPtr->execSqlSync("INSERT INTO sms.user(ds_user_name, ds_user_password, fk_vendor, ds_user_profile, ds_profile_name, ds_user_token) VALUES ($1, $2, (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)),$4, $5, $6);",
                                                 request["username"].asString(), 
-                                                request["password"].asString(), 
+                                                sha1(request["password"].asString()), 
                                                 request["vendor"].asString(),
                                                 request["profile"].asInt(),
-                                                request["name"].asString());
-                response = "Usuário criado com sucesso!";
+                                                request["name"].asString(),
+                                                sha1(token));
+                if(r.affectedRows())
+                {
+                    response = "Usuário criado com sucesso!";
+                }
+                else
+                {
+                    response = "Erro ao salvar!";
+                }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
@@ -134,12 +147,19 @@ Json::Value Dao::updateUser(Json::Value &request)
 												"	 ds_profile_name=CASE WHEN $6 = '' THEN ds_profile_name ELSE $6 END "
 												"WHERE CAST(id_user AS CHAR(10)) = $5;",
                                                 request["username"].asString(), 
-                                                request["password"].asString(), 
+                                                sha1(request["password"].asString()), 
                                                 request["vendor"].asString(),
                                                 request["profile"].asInt(), 
                                                 request["id"].asString(),
                                                 request["name"].asString());        
-                response = "Usuário atualizado com sucesso!";
+                if(r.affectedRows())
+                {
+                    response = "Usuário atualizado com sucesso!";
+                }
+                else
+                {
+                    response = "Erro ao atualizar!";
+                }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
@@ -476,6 +496,28 @@ Json::Value Dao::searchVendors(Json::Value &request)
         temp["response"] = "Erro ao listar, verifique os logs do servidor!";
     }
     return temp;
+}
+
+std::string Dao::getUserToken(std::string &user)
+{
+    std::string token {""};
+
+    auto clientPtr = drogon::app().getDbClient();
+    try
+    {
+        auto r = clientPtr->execSqlSync("select ds_user_token from sms.user where ds_user_name=$1", user);        
+        int i = 0;        
+        for (auto const &row : r)
+        {
+            token = row["ds_user_token"].as<std::string>();
+        }       
+    }
+    catch (const drogon::orm::DrogonDbException &e)
+    {
+        LOG_DEBUG << "catch:" << e.base().what();
+    }
+
+    return token;
 }
 
 bool Dao::checkExistingUser(Json::Value &user)

@@ -25,6 +25,7 @@ CREATE TABLE sms."user" (
     id_user bigint DEFAULT nextval('sms.seq_user'::regclass) NOT NULL,
     ds_user_name character varying(50) NOT NULL,
     ds_user_password character varying(50) NOT NULL,
+    ds_user_token character varying(50) NOT NULL, /* login */
     ds_user_profile integer,
     fk_vendor BIGINT NOT NULL REFERENCES sms.vendor (id_vendor),
     ds_profile_name character varying(50) NOT NULL,
