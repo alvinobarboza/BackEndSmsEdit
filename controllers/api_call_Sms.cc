@@ -13,35 +13,44 @@ void Sms::getUserSMS(const HttpRequestPtr &req,
     std::string tempVendor, path;
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
-//-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-//-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.getUSer;
-        std::string id = json["id"].asString();
-        reader.parse("{\"data\":{\"viewers_id\":"+id+"}}", request);
 
-        response = smsCall(pair, path, request); 
-
-        if(response["status"].asInt() == 1)
+    if(validateRequest(req))
+    {
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
         {
-            LOG_DEBUG;
-            integratedUser(response);
+            response["response"] = json;
+            response["status"] = 0;
         }
-    }  
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString()==""||
+                temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else 
+        {  //-------------------verification if url match existing url on database---------------------
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.getUSer;
+            std::string id = json["id"].asString();
+            reader.parse("{\"data\":{\"viewers_id\":"+id+"}}", request);
+
+            response = smsCall(pair, path, request); 
+
+            if(response["status"].asInt() == 1)
+            {
+                LOG_DEBUG;
+                integratedUser(response);
+            }
+        }  
+    }
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
@@ -60,39 +69,46 @@ void Sms::searchUserSMS(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, search);
     
     std::cout << req->getBody() << std::endl;
-
-	//-------------------verification for empty body---------------------
-    if(req->getBody()==""||req->getBody()=="undefined")
+    if(validateRequest(req))
     {
-        response["response"] = search;
-        response["status"] = 0;
-    }
-	//-------------------verification for empty fields---------------------
-    else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
-    {
-        response["response"] = search;
-        response["status"] = 0;
-    }
-    else
-    {   
-        tempVendor = search["vendor"].asString();
-        auto pair = getCredentials(tempVendor);      
-        path = urls.wildSearch;
-                
-        wild_search["wild_search"] = search["search"];
-        searchJ["search"] = wild_search;
-        dataJ["data"]=searchJ;
-
-        temp = smsCall(pair, path, dataJ); 
-        if(temp["status"].asInt() == 1)
+        //-------------------verification for empty body---------------------
+        if(req->getBody()==""||req->getBody()=="undefined")
         {
-            response = integratedSearch(temp);
+            response["response"] = search;
+            response["status"] = 0;
+        }
+        //-------------------verification for empty fields---------------------
+        else if(search["vendor"].asString() == ""||search["vendor"].asString() == "undefined")
+        {
+            response["response"] = search;
+            response["status"] = 0;
         }
         else
-        {
-            response = temp;
+        {   
+            tempVendor = search["vendor"].asString();
+            auto pair = getCredentials(tempVendor);      
+            path = urls.wildSearch;
+                    
+            wild_search["wild_search"] = search["search"];
+            searchJ["search"] = wild_search;
+            dataJ["data"]=searchJ;
+
+            temp = smsCall(pair, path, dataJ); 
+            if(temp["status"].asInt() == 1)
+            {
+                response = integratedSearch(temp);
+            }
+            else
+            {
+                response = temp;
+            }
+            
         }
-        
+    }
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
     }
     //LOG_DEBUG << response.toStyledString();
     auto resp=HttpResponse::newHttpJsonResponse(response);
@@ -113,32 +129,40 @@ void Sms::createSMS(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
     
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
+    if(validateRequest(req))
+	{
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else
+        {
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.createUser;        
+            request["data"] = json["data"];         
+            response = smsCall(pair, path, request);
+
+            if(response["status"].asInt() == 1)
+            {
+                int id = response["response"].asInt();
+                response = integratedCreate(json["data"], id);
+            }
+        } 
+	}
     else
     {
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.createUser;        
-        request["data"] = json["data"];         
-        response = smsCall(pair, path, request);
-
-        if(response["status"].asInt() == 1)
-        {
-            int id = response["response"].asInt();
-            response = integratedCreate(json["data"], id);
-        }
-    }  
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
@@ -157,34 +181,42 @@ void Sms::UpdateSMS(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
     
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
+    if(validateRequest(req))
+	{
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else
+        {
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.updateUser;        
+            request["data"] = json["data"]; 
+            
+            response = smsCall(pair, path, request);
+
+            if(response["status"].asInt() == 1)
+            {
+                int id = response["response"].asInt();
+                response = integratedUpdate(json["data"], id);
+                LOG_DEBUG;
+            }
+        }  
+	}
     else
     {
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.updateUser;        
-        request["data"] = json["data"]; 
-        
-        response = smsCall(pair, path, request);
-
-        if(response["status"].asInt() == 1)
-        {
-            int id = response["response"].asInt();
-            response = integratedUpdate(json["data"], id);
-            LOG_DEBUG;
-        }
-    }  
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);    
 }
@@ -201,33 +233,40 @@ void Sms::subscribeSMS(const HttpRequestPtr &req,
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
-    //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id_user"].asString()==""||
-            temp["id_product"].asString()==""||
-            temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.subscribeUser;
-        
-        reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
-                        ", \"products_id\":"+json["id_product"].asString()+"}}", request);
+    if(validateRequest(req))
+	{
+        //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString()==""||
+                temp["id_user"].asString()==""||
+                temp["id_product"].asString()==""||
+                temp["vendor"].asString()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else 
+        {  //-------------------verification if url match existing url on database---------------------
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.subscribeUser;
+            
+            reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
+                            ", \"products_id\":"+json["id_product"].asString()+"}}", request);
 
-        response = smsCall(pair, path, request);         
-    }  
-
+            response = smsCall(pair, path, request);         
+        }  
+	}
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
@@ -244,33 +283,40 @@ void Sms::cancelSubscriptionSMS(const HttpRequestPtr &req,
 
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
-    //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id_user"].asString()==""||
-            temp["id_product"].asString()==""||
-            temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.cancelUser;
-        
-        reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
-                        ", \"products_id\":"+json["id_product"].asString()+"}}", request);
+    if(validateRequest(req))
+	{
+        //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString()==""||
+                temp["id_user"].asString()==""||
+                temp["id_product"].asString()==""||
+                temp["vendor"].asString()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else 
+        {  //-------------------verification if url match existing url on database---------------------
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.cancelUser;
+            
+            reader.parse("{\"data\":{\"viewers_id\":"+json["id_user"].asString()+
+                            ", \"products_id\":"+json["id_product"].asString()+"}}", request);
 
-        response = smsCall(pair, path, request);         
-    }  
-
+            response = smsCall(pair, path, request);         
+        }  
+	}
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
@@ -288,29 +334,37 @@ void Sms::getAllowedProductsSMS(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
 
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.getAllowedProductUser;
-        
-        reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
+    if(validateRequest(req))
+	{
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString()==""||
+                temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else 
+        {  //-------------------verification if url match existing url on database---------------------
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.getAllowedProductUser;
+            
+            reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
 
-        response = smsCall(pair, path, request);         
-    }  
+            response = smsCall(pair, path, request);         
+        }  
+	}
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
@@ -328,29 +382,37 @@ void Sms::getSubscriptionSMS(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
 
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString()==""||
-            temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
-    else 
-    {  //-------------------verification if url match existing url on database---------------------
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-        path = urls.getSubscriptionInfo;
-        
-        reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
+    if(validateRequest(req))
+	{
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString()==""||
+                temp["id"].asString()==""||temp["vendor"].asString()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else 
+        {  //-------------------verification if url match existing url on database---------------------
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+            path = urls.getSubscriptionInfo;
+            
+            reader.parse("{\"data\":{\"viewers_id\":"+json["id"].asString()+"}}", request);
 
-        response = smsCall(pair, path, request);         
-    }  
+            response = smsCall(pair, path, request);         
+        }  
+	}
+    else
+    {
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
@@ -368,29 +430,37 @@ void Sms::getPortalAvailable(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, json);
     temp = json;
     
- //-------------------verification for empty body---------------------
-    if(req->getBody() == ""||req->getBody()=="undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
- //-------------------verification for empty fields---------------------
-    else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
-    {
-        response["response"] = json;
-        response["status"] = 0;
-    }
+    if(validateRequest(req))
+	{
+    //-------------------verification for empty body---------------------
+        if(req->getBody() == ""||req->getBody()=="undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+    //-------------------verification for empty fields---------------------
+        else if(temp["vendor"].asString() == ""||temp["vendor"].asString() == "undefined")
+        {
+            response["response"] = json;
+            response["status"] = 0;
+        }
+        else
+        {
+            tempVendor = json["vendor"].asString();
+            auto pair = getCredentials(tempVendor);
+
+            path = urls.getPortalAvailable;
+            
+            reader.parse("{\"data\":{}}", request); 
+            
+            response = smsCall(pair, path, request);
+        }  
+	}
     else
     {
-        tempVendor = json["vendor"].asString();
-        auto pair = getCredentials(tempVendor);
-
-        path = urls.getPortalAvailable;
-        
-        reader.parse("{\"data\":{}}", request); 
-        
-        response = smsCall(pair, path, request);
-    }  
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
     auto resp=HttpResponse::newHttpJsonResponse(response);
     callback(resp);
 }
@@ -438,9 +508,10 @@ Json::Value smsCall(std::pair<std::string, std::string> &credendials,
 
     if (credendials.second == "")
     {
-        response["response"] = "Url vazia";
-        response["status"] = 0;
-        LOG_DEBUG << "End";
+        Json::Value obj;
+        obj[0]["error"] = "Vendor inválido";
+        response["response"] = obj;
+        response["status"] = 6;
         return response;
     }    
     
@@ -459,7 +530,10 @@ Json::Value smsCall(std::pair<std::string, std::string> &credendials,
 
     if(a.first != ReqResult::Ok)
     {
-        response["response"] = "Problemas durante comunicação até servidor MOTV";
+        Json::Value obj;
+        obj[0]["error"] = "Problemas durante comunicação até servidor MOTV";
+        response["response"] = obj;
+        response["status"] = 0;
     }
     else
     {   

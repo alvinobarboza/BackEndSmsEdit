@@ -5,31 +5,38 @@ Json::Value Dao::login(Json::Value &request)
     LOG_DEBUG;
     Json::Value temp;
     int profile = 2;
+    std::string password {sha1(request["password"].asString())};
     
     auto clientPtr = drogon::app().getDbClient();
     try
     {
         auto r = clientPtr->execSqlSync("select * from sms.user, sms.vendor where ds_user_name=$1 and ds_user_password=$2 and fk_vendor = id_vendor",
-                                        request["login"].asString(),request["password"].asString());
+                                        request["login"].asString(), password);
+
+        Json::Value obj;
         for (auto const &row : r)
         {
-            temp["vendor"] = row["ds_vendor_name"].as<std::string>();           
+            obj[0]["vendor"] = row["ds_vendor_name"].as<std::string>();           
             profile = row["ds_user_profile"].as<int>();
-            temp["token"] = row["ds_user_token"].as<std::string>();
-            temp["name"] = row["ds_profile_name"].as<std::string>();
-            temp["id"] = row["id_user"].as<std::string>();        
+            obj[0]["token"] = row["ds_user_token"].as<std::string>();
+            obj[0]["name"] = row["ds_profile_name"].as<std::string>();
+            obj[0]["id"] = row["id_user"].as<std::string>();        
         }
-        if(temp["vendor"].asString() == "" && profile == 2){
-            temp["Error"] = "Usuário ou senha incorreta!";
+        if(obj[0]["vendor"].asString() == "" && profile == 2){
+            temp["status"] = 14001;
+            temp["response"] = Json::arrayValue;
         }else
         {
-            temp["profile"] = profile;
+            obj[0]["profile"] = profile;
+            temp["status"] = 1;
+            temp["response"] = obj;
         }
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
         LOG_DEBUG << "catch:" << e.base().what();
-        temp["Error"] = "Erro ao logar, verifique os logs do servidor!";
+        temp["status"] = 0;
+        temp["response"] = Json::arrayValue;
     }
     return temp;
 }
@@ -37,7 +44,6 @@ Json::Value Dao::login(Json::Value &request)
 Json::Value Dao::saveUser(Json::Value &request)
 {
     LOG_DEBUG;
-    std::string response;
     Json::Value temp;
     std::vector<std::string> keyNames;
     int i = 0;
@@ -58,15 +64,16 @@ Json::Value Dao::saveUser(Json::Value &request)
             request["vendor"].asString() == ""||
             request["name"].asString() == "")
         {
-            temp["response"] = "Algum campo vazio";
-            temp["requestSent"] = request;
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 6;
             return temp;
         }
         else
         {
             if(checkExistingUser(request))
             {
-                temp["response"] = "Usuário já existe!";
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 14000;
                 return temp;
             }
 
@@ -86,26 +93,28 @@ Json::Value Dao::saveUser(Json::Value &request)
                                                 sha1(token));
                 if(r.affectedRows())
                 {
-                    response = "Usuário criado com sucesso!";
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 1;
                 }
                 else
                 {
-                    response = "Erro ao salvar!";
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 0;
                 }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
                 LOG_DEBUG << "catch:" << e.base().what();
-                response = "Erro ao atualizar, verifique os logs do servidor!";
-            }  
-        }        
-        temp["response"] = response;
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
+            }
+        }
         return temp;
     }
     else
     {
-        temp["response"] = "Algum campo não enviado";
-        temp["requestSent"] = request;
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
         return temp;
     }    
 }
@@ -113,7 +122,6 @@ Json::Value Dao::saveUser(Json::Value &request)
 Json::Value Dao::updateUser(Json::Value &request)
 {    
     LOG_DEBUG;
-    std::string response;
     Json::Value temp;
     std::vector<std::string> keyNames;
     int i = 0;
@@ -131,17 +139,24 @@ Json::Value Dao::updateUser(Json::Value &request)
     {        
         if(request["id"].asString() == "")
         {
-            temp["response"] = "ID não informado";
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 6;
             return temp;
         }
         else
         {
+            if(checkExistingUser(request))
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 14000;
+                return temp;
+            }
             auto clientPtr = drogon::app().getDbClient();
             try
             {
                 auto r = clientPtr->execSqlSync("UPDATE sms.user "
 												"SET ds_user_name= CASE WHEN $1 = '' THEN ds_user_name ELSE $1 END, "
-												"	 ds_user_password=CASE WHEN $2 = '' THEN ds_user_password ELSE $2 END, "
+												"	 ds_user_password=CASE WHEN $2 = 'da39a3ee5e6b4b0d3255bfef95601890afd80709' THEN ds_user_password ELSE $2 END, "
 												"	 fk_vendor = CASE WHEN $3 = '' THEN fk_vendor ELSE (select id_vendor from sms.vendor where upper(ds_vendor_name) = upper($3)) END, "
 												"	 ds_user_profile=$4, "
 												"	 ds_profile_name=CASE WHEN $6 = '' THEN ds_profile_name ELSE $6 END "
@@ -154,28 +169,28 @@ Json::Value Dao::updateUser(Json::Value &request)
                                                 request["name"].asString());        
                 if(r.affectedRows())
                 {
-                    response = "Usuário atualizado com sucesso!";
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 1;
                 }
                 else
                 {
-                    response = "Erro ao atualizar!";
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 0;
                 }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
                 LOG_DEBUG << "catch:" << e.base().what();
-                response = "Erro ao atualizar, verifique os logs do servidor!";
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
             }
         }
-        
-        temp["response"] = response;
-
         return temp;
     }
     else
     {
-        temp["response"] = "Algum campo não enviado";
-        temp["requestSent"] = request;
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
         return temp;
     } 
 }
@@ -184,11 +199,11 @@ Json::Value Dao::deleteUser(Json::Value &request)
 {
     LOG_DEBUG;
     Json::Value temp;
-    std::string response;
     
     if(request["id"].asString() == "")
     {
-        response = "Compo ID vazio!";
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
     }
     else
     {        
@@ -197,22 +212,30 @@ Json::Value Dao::deleteUser(Json::Value &request)
         {
             auto r = clientPtr->execSqlSync("DELETE FROM sms.user WHERE CAST(id_user AS VARCHAR) = $1 ;",
                                             request["id"].asString());        
-            response = "Usuário deletado com sucesso!";
+            if(r.affectedRows())
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 1;
+            }
+            else
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
+            }
         }
         catch (const drogon::orm::DrogonDbException &e)
         {
             LOG_DEBUG << "catch:" << e.base().what();
-            response = "Erro ao deletar, verifique os logs do servidor!";
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 0;
         }
     }
-    temp["response"] = response;
     return temp;
 }
 
 Json::Value Dao::saveVendor(Json::Value &request)
 {
     LOG_DEBUG;
-    std::string response;
     Json::Value temp;
     std::vector<std::string> keyNames;
     int i = 0;
@@ -233,15 +256,16 @@ Json::Value Dao::saveVendor(Json::Value &request)
             request["usertoken"].asString() == ""||
             request["token"].asString() == "")
         {
-            temp["response"] = "Algum campo vazio";
-            temp["requestSent"] = request;
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 6;
             return temp;
         }
         else
         {
             if(checkExistingVendor(request))
             {
-                temp["response"] = "Vendor já existe!";
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 14000;
                 return temp;
             }
 
@@ -253,23 +277,30 @@ Json::Value Dao::saveVendor(Json::Value &request)
                                                 request["url"].asString(), 
                                                 request["usertoken"].asString(),
                                                 request["token"].asString());
-                response = "Vendor criado com sucesso!";
+                if(r.affectedRows())
+                {
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 1;
+                }
+                else
+                {
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 0;
+                }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
                 LOG_DEBUG << "catch:" << e.base().what();
-                response = "Erro ao atualizar, verifique os logs do servidor!";
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
             }  
         }
-        
-        temp["response"] = response;
-
         return temp;
     }
     else
     {
-        temp["response"] = "Algum campo não enviado";
-        temp["requestSent"] = request;
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
         return temp;
     }
 }
@@ -277,7 +308,6 @@ Json::Value Dao::saveVendor(Json::Value &request)
 Json::Value Dao::updateVendor(Json::Value &request)
 {
     LOG_DEBUG;
-    std::string response;
     Json::Value temp;
     std::vector<std::string> keyNames;
     int i = 0;
@@ -295,11 +325,18 @@ Json::Value Dao::updateVendor(Json::Value &request)
     {        
         if(request["id"].asString() == "")
         {
-            temp["response"] = "ID não informado";
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 6;
             return temp;
         }
         else
         {
+            if(checkExistingVendor(request))
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 14000;
+                return temp;
+            }
             auto clientPtr = drogon::app().getDbClient();
             try
             {
@@ -314,23 +351,30 @@ Json::Value Dao::updateVendor(Json::Value &request)
                                                 request["usertoken"].asString(),
                                                 request["token"].asString(),
                                                 request["id"].asString());
-                response = "Vendor atualizado com sucesso!";
+                if(r.affectedRows())
+                {
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 1;
+                }
+                else
+                {
+                    temp["response"] = Json::arrayValue;
+                    temp["status"] = 0;
+                }
             }
             catch (const drogon::orm::DrogonDbException &e)
             {
                 LOG_DEBUG << "catch:" << e.base().what();
-                response = "Erro ao atualizar, verifique os logs do servidor!";
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
             }  
         }
-        
-        temp["response"] = response;
-
         return temp;
     }
     else
     {
-        temp["response"] = "Algum campo não enviado";
-        temp["requestSent"] = request;
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
         return temp;
     }
 }
@@ -339,11 +383,11 @@ Json::Value Dao::deleteVendor(Json::Value &request)
 {
     LOG_DEBUG;
     Json::Value temp;
-    std::string response;
-    
+
     if(request["id"].asString() == "")
     {
-        response = "Compo ID vazio!";
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 6;
     }
     else
     {        
@@ -352,16 +396,24 @@ Json::Value Dao::deleteVendor(Json::Value &request)
         {
             auto r = clientPtr->execSqlSync("DELETE FROM sms.vendor WHERE CAST(id_vendor AS VARCHAR) = $1 ;",
                                             request["id"].asString());        
-            response = "Vendor deletado com sucesso!";
-            std::cout << request << std::endl;
+            if(r.affectedRows())
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 1;
+            }
+            else
+            {
+                temp["response"] = Json::arrayValue;
+                temp["status"] = 0;
+            }
         }
         catch (const drogon::orm::DrogonDbException &e)
         {
             LOG_DEBUG << "catch:" << e.base().what();
-            response = "Erro ao deletar, verifique os logs do servidor!";
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 0;
         }
     }
-    temp["response"] = response;
     return temp;
 }
 
@@ -369,38 +421,34 @@ Json::Value Dao::getUsers()
 {
     LOG_DEBUG;
     Json::Value temp;
-    std::string response;
+    int response {0};
 
     auto clientPtr = drogon::app().getDbClient();
     try
     {
         auto r = clientPtr->execSqlSync("SELECT * FROM sms.user, sms.vendor WHERE fk_vendor = id_vendor;");
         
-        int i = 0;
-        std::string count;
+        int i { 0 };
+        Json::Value obj;
         for (auto const &row : r)
         {
-            Json::Value obj;
-            obj["UserID"] = row["id_user"].as<std::string>();
-            obj["UserName"] = row["ds_user_name"].as<std::string>();
-            obj["Vendor"] = row["ds_vendor_name"].as<std::string>();
-            obj["Profile"] = row["ds_user_profile"].as<int>();
-            obj["Name"] = row["ds_profile_name"].as<std::string>();
+            obj[i]["UserID"] = row["id_user"].as<std::string>();
+            obj[i]["UserName"] = row["ds_user_name"].as<std::string>();
+            obj[i]["Vendor"] = row["ds_vendor_name"].as<std::string>();
+            obj[i]["Profile"] = row["ds_user_profile"].as<int>();
+            obj[i]["Name"] = row["ds_profile_name"].as<std::string>();
             
-            count = std::to_string(i);
-            temp[count] = obj;
             i++;
+            response = 1;
         }
-        response = "Usuários listados com sucesso!";
-        
+        temp["response"] = obj;       
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
         LOG_DEBUG << "catch:" << e.base().what();
-        response = "Erro ao listar, verifique os logs do servidor!";
     }
 
-    temp["response"] = response;
+    temp["status"] = response;
 
     return temp;
 }
@@ -408,30 +456,31 @@ Json::Value Dao::getUsers()
 Json::Value Dao::getVendors()
 {
     LOG_DEBUG;
-    std::string response = "", count = "";
     Json::Value temp, obj;
 
     auto clientPtr = drogon::app().getDbClient();
     try
     {
         auto r = clientPtr->execSqlSync("SELECT * FROM sms.vendor;");        
-        int i = 0;
+        int i {0};
         for (auto const &row : r)
         {
-            obj["VendorID"] = row["id_vendor"].as<std::string>();
-            obj["VendorName"] = row["ds_vendor_name"].as<std::string>();
-            obj["Secret"] = row["ds_vendor_token"].as<std::string>();
-            obj["UserSecret"] = row["ds_vendor_user_token"].as<std::string>();
-            obj["URL"] = row["ds_vendor_url"].as<std::string>();
-            
-            count = std::to_string(i);
-            temp[count] = obj;
+            obj[i]["VendorID"] = row["id_vendor"].as<std::string>();
+            obj[i]["VendorName"] = row["ds_vendor_name"].as<std::string>();
+            obj[i]["Secret"] = row["ds_vendor_token"].as<std::string>();
+            obj[i]["UserSecret"] = row["ds_vendor_user_token"].as<std::string>();
+            obj[i]["URL"] = row["ds_vendor_url"].as<std::string>();
+                       
             i++;
         }
+        temp["response"] = obj;
+        temp["status"] = 1;
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
-        LOG_DEBUG << "catch:" << e.base().what();
+        LOG_DEBUG << "catch:" << e.base().what();        
+        temp["response"] = Json::arrayValue;;
+        temp["status"] = 0;
     }
     return temp;
 }
@@ -445,26 +494,35 @@ Json::Value Dao::searchUsers(Json::Value &request)
     try
     {
         auto r = clientPtr->execSqlSync("select id_user, ds_user_name, ds_user_profile, ds_profile_name, ds_vendor_name from sms.user, sms.vendor where (upper(ds_profile_name) like upper('%"+request["search"].asString()+"%') or upper(ds_user_name) like upper('%"+request["search"].asString()+"%') or upper(ds_vendor_name) like upper('%"+request["search"].asString()+"%')) and fk_vendor = id_vendor;");        
-        int i = 0;
+        int i {0};
         
         for (auto const &row : r)
         {
-            obj["idUser"] = row["id_user"].as<std::string>();
-            obj["userName"] = row["ds_user_name"].as<std::string>();
-            obj["profile"] = row["ds_user_profile"].as<int>();
-            obj["name"] = row["ds_profile_name"].as<std::string>();
-            obj["vendor"] = row["ds_vendor_name"].as<std::string>();
+            obj[i]["idUser"] = row["id_user"].as<std::string>();
+            obj[i]["userName"] = row["ds_user_name"].as<std::string>();
+            obj[i]["profile"] = row["ds_user_profile"].as<int>();
+            obj[i]["name"] = row["ds_profile_name"].as<std::string>();
+            obj[i]["vendor"] = row["ds_vendor_name"].as<std::string>();
            
-            temp[std::to_string(i)] = obj;
             i++;
-        }       
+        }         
+        if(r.affectedRows())
+        {
+            temp["response"] = obj;
+            temp["status"] = 1;
+        }
+        else
+        {
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 1;
+        }
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
         LOG_DEBUG << "catch:" << e.base().what();
-        temp["response"] = "Erro ao listar, verifique os logs do servidor!";
-    }
-    
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 0;
+    }    
     return temp;
 }
 
@@ -477,23 +535,33 @@ Json::Value Dao::searchVendors(Json::Value &request)
     try
     {
         auto r = clientPtr->execSqlSync("select * from sms.vendor where (upper(ds_vendor_name) like upper('%"+request["search"].asString()+"%') or upper(ds_vendor_user_token) like upper('%"+request["search"].asString()+"%'))");        
-        int i = 0;
+        int i {0};
         
         for (auto const &row : r)
         {
-            obj["idVendor"] = row["id_vendor"].as<std::string>();
-            obj["vendorName"] = row["ds_vendor_name"].as<std::string>();
-            obj["url"] = row["ds_vendor_url"].as<std::string>();
-            obj["userToken"] = row["ds_vendor_user_token"].as<std::string>();
+            obj[i]["idVendor"] = row["id_vendor"].as<std::string>();
+            obj[i]["vendorName"] = row["ds_vendor_name"].as<std::string>();
+            obj[i]["url"] = row["ds_vendor_url"].as<std::string>();
+            obj[i]["userToken"] = row["ds_vendor_user_token"].as<std::string>();
            
-            temp[std::to_string(i)] = obj;
             i++;
-        }       
+        }          
+        if(r.affectedRows())
+        {
+            temp["response"] = obj;
+            temp["status"] = 1;
+        }
+        else
+        {
+            temp["response"] = Json::arrayValue;
+            temp["status"] = 1;
+        }
     }
     catch (const drogon::orm::DrogonDbException &e)
     {
         LOG_DEBUG << "catch:" << e.base().what();
-        temp["response"] = "Erro ao listar, verifique os logs do servidor!";
+        temp["response"] = Json::arrayValue;
+        temp["status"] = 0;
     }
     return temp;
 }

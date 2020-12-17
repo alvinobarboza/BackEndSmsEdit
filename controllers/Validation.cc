@@ -15,12 +15,10 @@ bool validateRequest(const drogon::HttpRequestPtr &req)
     std::string tokenHolder {user + ":" + compareToken};
     if(!token.compare(sha1(tokenHolder)))
     {
-        LOG_DEBUG;
         return true;
     }
     else
     {
-        LOG_DEBUG;
         return false;        
     }    
 }

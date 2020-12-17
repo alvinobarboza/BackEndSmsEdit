@@ -14,12 +14,14 @@ void Service::login(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     }   
-    else
+    else 
     {
         ret = dao.login(loginData);
     }
+    
     
     //ret["token"]=drogon::utils::getUuid();
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -39,13 +41,19 @@ void Service::saveUser(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     }
-    else
+    else if(validateRequest(req))
     {        
         ret = dao.saveUser(user);
     }
-
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
+    }
+    
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
@@ -62,12 +70,18 @@ void Service::updateUser(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     }
-    else
+    else if(validateRequest(req))
     {
         ret = dao.updateUser(user);
     } 
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
+    }
         
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
@@ -77,7 +91,6 @@ void Service::updateUser(const HttpRequestPtr &req,
 void Service::deleteUser(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    std::string response = "";
     Json::Value ret, user;
     Json::Reader reader; 
     Dao dao;
@@ -86,11 +99,17 @@ void Service::deleteUser(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     } 
-    else
+    else if(validateRequest(req))
     {
         ret = dao.deleteUser(user);
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
     }
             
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -109,11 +128,17 @@ void Service::saveVendor(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     } 
-    else
-    {        
+    else if(validateRequest(req))
+    {
         ret = dao.saveVendor(vendor);
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
     }
 
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -132,11 +157,17 @@ void Service::updateVendor(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     } 
-    else
-    {        
+    else if(validateRequest(req))
+    {
         ret = dao.updateVendor(vendor);
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
     }
 
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -147,7 +178,6 @@ void Service::updateVendor(const HttpRequestPtr &req,
 void Service::deleteVendor(const HttpRequestPtr &req,
                 std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    std::string response = "";
     Json::Value ret, vendor;
     Json::Reader reader; 
     Dao dao;
@@ -156,11 +186,17 @@ void Service::deleteVendor(const HttpRequestPtr &req,
     
     if(req->getBody()=="")
     {
-        ret["response"] = "Não Há informações no body";
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 7;
     } 
-    else
+    else if(validateRequest(req))
     {
         ret = dao.deleteVendor(vendor);
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
     }
             
     auto resp=HttpResponse::newHttpJsonResponse(ret);
@@ -171,11 +207,20 @@ void Service::deleteVendor(const HttpRequestPtr &req,
 void Service::getUsers(const HttpRequestPtr &req,
             std::function<void (const HttpResponsePtr &)> &&callback) const
 {
-    LOG_DEBUG<<"Get All Users -> Method = getUsers";
+    LOG_DEBUG;
     Dao dao;
     Json::Value ret;
-
-    ret = dao.getUsers();
+    
+    if (validateRequest(req))
+    {
+        ret = dao.getUsers();        
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
+    }
+    
         
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
@@ -187,7 +232,16 @@ void Service::getVendors(const HttpRequestPtr &req,
 {
     Json::Value ret;
     Dao dao;
-    ret = dao.getVendors();
+
+    if (validateRequest(req))
+    {
+        ret = dao.getVendors();        
+    }
+    else
+    {
+        ret["response"] = Json::arrayValue;
+        ret["status"] = 20;
+    }
         
     auto resp=HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
@@ -204,12 +258,18 @@ void Service::searchUsers(const HttpRequestPtr &req,
 
     if(req->getBody()=="")
     {
-        response["response"] = "Não há informações Json";
+        response["response"] = Json::arrayValue;
+        response["status"] = 7;
+    } 
+    else if(validateRequest(req))
+    {
+        response = dao.searchUsers(request);
     }
     else
     {
-        response = dao.searchUsers(request);
-    }    
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
 
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
@@ -226,12 +286,18 @@ void Service::searchVendors(const HttpRequestPtr &req,
 
     if(req->getBody()=="")
     {
-        response["response"] = "Não há informações Json";
+        response["response"] = Json::arrayValue;
+        response["status"] = 7;
+    } 
+    else if(validateRequest(req))
+    {
+        response = dao.searchVendors(request);
     }
     else
     {
-        response = dao.searchVendors(request);
-    }    
+        response["response"] = Json::arrayValue;
+        response["status"] = 20;
+    }
 
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
@@ -271,8 +337,8 @@ void Service::tests(const HttpRequestPtr &req,
     std::string teste {sha1(user+tokenUser)};
     
     std::string token =  sha1(sTime+user_token+secret);
-
-    response["teste"] = teste;
+    std::string teste2 {sha1(temp["teste"].asString())};
+    response["teste"] = teste + ": " + teste2;
     response["sms"] = user_token+":"+sTime+":"+token;
             
     // LOG_DEBUG;

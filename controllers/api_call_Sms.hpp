@@ -7,6 +7,7 @@
 #include <chrono>
 #include "sha1.hpp"
 #include "Sms_user_DAO.hpp"
+#include "Validation.hpp"
 
 using namespace drogon;
 namespace api
