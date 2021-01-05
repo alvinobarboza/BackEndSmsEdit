@@ -313,33 +313,15 @@ void Service::tests(const HttpRequestPtr &req,
     reader.parse(std::string{req->getBody()}, temp);
 
     validateRequest(req);
-    std::string secret = "";
+    std::string secret = temp["secret"].asString();
+    std::string user_token = temp["user"].asString();
 
     time_t t = time(0);
     std::string sTime = std::to_string(t);
-    std::string user_token = "alvino.barboza@youcast.tv.br";
-    // sms 
-
-    if(temp["type"].asString() == "sms")
-    {
-        secret = "cm3yaca6xr37xp5d0b10vw6d8yhcwd9zk1b7o0be";
-    }
-    else if( temp["type"].asString() == "tvn")
-    {
-        secret = "q2r4lgtefdz7t3obtyxw2h5crgfi877xtcbkuizo";
-    }
-    else
-    {
-        secret = "crzahutejhdwbxxf8n79g9t9ugr4dyt0sh8zxwnk";
-    }
-
-    std::string tokenUser {"91a2962738f56e145792a5fedb0f7b0fedff04bf"}, user {"alvino.barboza:"};
-    std::string teste {sha1(user+tokenUser)};
-    
+        
     std::string token =  sha1(sTime+user_token+secret);
-    std::string teste2 {sha1(temp["teste"].asString())};
-    response["teste"] = teste + ": " + teste2;
-    response["sms"] = user_token+":"+sTime+":"+token;
+    
+    response["token"] = user_token+":"+sTime+":"+token;
             
     // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);
