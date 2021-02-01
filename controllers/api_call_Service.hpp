@@ -28,7 +28,7 @@ namespace api
                 METHOD_ADD(Service::getUsers,"/getUsers",Get);
                 METHOD_ADD(Service::searchVendors,"/searchVendors",Post);
                 METHOD_ADD(Service::searchUsers,"/searchUsers",Post);
-                METHOD_ADD(Service::tests,"/test",Post);
+                METHOD_ADD(Service::tests,"/test/{1}/{2}",Get);
             METHOD_LIST_END
             
             void login(const HttpRequestPtr &req,
@@ -65,7 +65,9 @@ namespace api
                             std::function<void (const HttpResponsePtr &)> &&callback) const;
 
             void tests(const HttpRequestPtr &req,
-                            std::function<void (const HttpResponsePtr &)> &&callback) const;
+                            std::function<void (const HttpResponsePtr &)> &&callback,
+                            std::string profile,
+                            std::string vodID) const;
         };
     }
 }

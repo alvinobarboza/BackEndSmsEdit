@@ -304,25 +304,29 @@ void Service::searchVendors(const HttpRequestPtr &req,
 }
 
 void Service::tests(const HttpRequestPtr &req,
-                std::function<void (const HttpResponsePtr &)> &&callback) const
+                std::function<void (const HttpResponsePtr &)> &&callback,
+                std::string profile,
+                std::string vodID) const
 {
-    LOG_DEBUG;
+    LOG_DEBUG << profile << " " << vodID;
     Json::Reader reader;
     Json::Value temp, response;
-    
+
     reader.parse(std::string{req->getBody()}, temp);
 
-    validateRequest(req);
+    //validateRequest(req);
     std::string secret = temp["secret"].asString();
     std::string user_token = temp["user"].asString();
-
+    LOG_DEBUG;
     time_t t = time(0);
     std::string sTime = std::to_string(t);
         
     std::string token =  sha1(sTime+user_token+secret);
     
     response["token"] = user_token+":"+sTime+":"+token;
-            
+
+    LOG_DEBUG << response.toStyledString();
+           
     // LOG_DEBUG;
     auto resp = HttpResponse::newHttpJsonResponse(response);
     callback(resp);
